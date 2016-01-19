@@ -1,6 +1,18 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
+"""bench2vhdl.py: converts ISCAS89 bench format to VHDL"""
+
+__author__ = "Sebastian Kroesche"
+__copyright__ = "Copyright 2016, Sebastian Kroesche"
+__license__ = "GPL"
+__version__ = "0.1"
+__maintainer__ = "Sebastian Kroesche"
+__email__ = "sebastian.kroesche@mytum.de"
+__status__ = "Development"
 
 import sys, getopt
+
+from dff import dff
 
 def main(argv):
    inputfile = ''
