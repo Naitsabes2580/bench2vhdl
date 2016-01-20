@@ -26,6 +26,9 @@ from lis_or4 import lis_or4
 from lis_nand2 import lis_nand2
 from lis_nand3 import lis_nand3
 from lis_nand4 import lis_nand4
+from lis_nor2 import lis_nor2
+from lis_nor3 import lis_nor3
+from lis_nor4 import lis_nor4
 
 def main(argv):
    inputfile = ''
@@ -139,6 +142,23 @@ def main(argv):
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_nand4 = lis_nand4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
             l_nand_gates.append(new_nand4)
+        elif 'NOR' in line: 
+          open_bracket = line.find('(')+1
+          close_bracket = line.find(')')
+          gate_size = line.count(',', open_bracket, close_bracket) + 1
+          Z = line[0:line.find('=')-1]            
+          if gate_size == 2:            
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_nor2 = lis_nor2(l_input_ports[0].strip(), l_input_ports[1].strip(), Z)
+            l_nor_gates.append(new_nor2)
+          elif gate_size == 3:
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_nor3 = lis_nor3(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), Z)            
+            l_nor_gates.append(new_nor3)
+          elif gate_size == 4:
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_nor4 = lis_nor4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
+            l_nor_gates.append(new_nor4)
 
 
             
@@ -169,6 +189,8 @@ def main(argv):
    
    target.write('entity %s is\n' % entityname)
    target.write('port (\n')
+   target.write('clk : in std_logic; \n')
+   target.write('reset : in std_logic; \n')
    for input_port in l_inputs:
    		target.write(input_port)
    		target.write(': in std_logic; \n')
@@ -224,8 +246,17 @@ def main(argv):
        elif isinstance(l_nand_gates[i], lis_nand3):
          target.write(lis_nand3.writePortMap(l_nand_gates[i]))
        elif isinstance(l_nand_gates[i], lis_nand4):
-         target.write(lis_nand4.writePortMap(l_nand_gates[i]))   
-   target.write('end architecture;\n')   
+         target.write(lis_nand4.writePortMap(l_nand_gates[i]))
+   #Write NOR-gates
+   target.write('\n--NOR-gates (total number: %d)\n' % len(l_nor_gates))
+   for i in range(0, len(l_nor_gates)):       
+    if isinstance(l_nor_gates[i], lis_nor2):
+      target.write(lis_nor2.writePnortMap(l_nor_gates[i]))
+    elif isinstance(l_nor_gates[i], lis_nor3):
+      target.write(lis_nor3.writePnortMap(l_nor_gates[i]))
+    elif isinstance(l_nor_gates[i], lis_nor4):
+      target.write(lis_nor4.writePnortMap(l_nor_gates[i]))    
+   target.write('\nend architecture;\n')   
    target.close
 
 if __name__ == "__main__":

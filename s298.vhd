@@ -20,6 +20,8 @@ library lis_lib;
  
 entity s298 is
 port (
+clk : in std_logic; 
+reset : in std_logic; 
 G0: in std_logic; 
 G1: in std_logic; 
 G2: in std_logic; 
@@ -158,4 +160,25 @@ NAND4_3: LIS_NAND4 port map( A => G68, B => G69, C => G70, D => G108, Z => G101 
 NAND2_0: LIS_NAND2 port map( A => G77, B => G78, Z => G106 );
 NAND4_4: LIS_NAND4 port map( A => G71, B => G72, C => G73, D => G14, Z => G109 );
 NAND4_5: LIS_NAND4 port map( A => G79, B => G80, C => G81, D => G108, Z => G116 );
+
+--NOR-gates (total number: 19)
+NOR2_0:	 LIS_NOR2 port map( A => G10, B => G130, Z => G29 );
+NOR4_0:	 LIS_NOR4 port map( A => G31, B => G32, C => G33, D => G130, Z => G30 );
+NOR4_1:	 LIS_NOR4 port map( A => G35, B => G36, C => G37, D => G130, Z => G34 );
+NOR2_1:	 LIS_NOR2 port map( A => G42, B => G43, Z => G39 );
+NOR3_0:	 LIS_NOR3 port map( A => G48, B => G49, C => G53, Z => G44 );
+NOR2_2:	 LIS_NOR2 port map( A => G50, B => G40, Z => G47 );
+NOR2_3:	 LIS_NOR2 port map( A => G26, B => G27, Z => G53 );
+NOR3_1:	 LIS_NOR3 port map( A => G57, B => G58, C => G130, Z => G56 );
+NOR2_4:	 LIS_NOR2 port map( A => G14, B => G55, Z => G61 );
+NOR4_2:	 LIS_NOR4 port map( A => G88, B => G89, C => G90, D => G112, Z => G86 );
+NOR3_2:	 LIS_NOR3 port map( A => G94, B => G95, C => G97, Z => G92 );
+NOR2_5:	 LIS_NOR2 port map( A => G100, B => G101, Z => G98 );
+NOR2_6:	 LIS_NOR2 port map( A => G105, B => G106, Z => G102 );
+NOR2_7:	 LIS_NOR2 port map( A => G74, B => G75, Z => G104 );
+NOR2_8:	 LIS_NOR2 port map( A => G110, B => G111, Z => G107 );
+NOR2_9:	 LIS_NOR2 port map( A => G62, B => G63, Z => G112 );
+NOR2_10:	 LIS_NOR2 port map( A => G115, B => G116, Z => G113 );
+NOR3_3:	 LIS_NOR3 port map( A => G122, B => G123, C => G130, Z => G119 );
+NOR3_4:	 LIS_NOR3 port map( A => G128, B => G129, C => G130, Z => G125 );
 end architecture;
