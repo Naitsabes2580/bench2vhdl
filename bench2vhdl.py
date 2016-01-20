@@ -32,9 +32,10 @@ from lis_nor4 import lis_nor4
 
 def main(argv):
    inputfile = ''
-   outputfile = ''   
+   outputfile = ''
+   verbose = False
    try:
-      opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
+      opts, args = getopt.getopt(argv,"hvi:o:f:",["ifile=","ofile="])
    except getopt.GetoptError:
       print 'usage: bench2vhdl.py -i <inputfile> -o <outputfile>'
       sys.exit(2)
@@ -42,12 +43,13 @@ def main(argv):
       if opt == '-h':
          print 'usage: bench2vhdl.py -i <inputfile> -o <outputfile>'
          sys.exit()
+      elif opt in ("-v", "--verbose"):
+          verbose = True
       elif opt in ("-i", "--ifile"):
          inputfile = arg
       elif opt in ("-o", "--ofile"):
-         outputfile = arg
-   print 'Input file is', inputfile
-   print 'Output file is', outputfile
+         outputfile = arg      
+  
 
    # Initialize lists for inputs, outputs, FFs and gates
    l_statistics = []
@@ -61,9 +63,19 @@ def main(argv):
    l_nor_gates = []
    l_connections = []
    
+   # Print some information for the user if verbose made has been activated
+   if verbose == True:
+    print 'This is bench2vhdl; verbose mode activated'
+    print 'Input file is:', inputfile
+    print 'Output file is:', outputfile
+
    ###############################################################
    #                  PROCESS .BENCH INPUT FILE                  #    
    ###############################################################
+   entityname = inputfile[0:inputfile.find('.')]
+   if verbose == True:
+     print 'Parsing input file for entity %s .....' % entityname
+
    with open(inputfile) as f:
     for line in f:
         # Skip comment lines
@@ -192,10 +204,20 @@ def main(argv):
             if not(signal.strip() in l_connections):
               l_connections.append(signal.strip())
 
+   if verbose == True:
+    print 'Done\n\nThe following elements have been found in the design:'
+    print '%d inputs: %s' % ( len(l_inputs), l_inputs)
+    print '%d outputs: %s' % ( len(l_outputs), l_outputs)
+    print '%d D flip-flops' % len(l_dffs)
+    print '%d inverters' % len(l_inverters)
+    print '%d logic gates: %d ANDs, %d NANDs, %d ORs, %d NORs\n' % ( len(l_and_gates) + len(l_nand_gates) + len(l_or_gates) + len(l_nor_gates), len(l_and_gates), len(l_nand_gates), len(l_or_gates), len(l_nor_gates) )
+
    # Post processing of l_connections
    for signal in l_connections:
      if signal in l_inputs or signal in l_outputs:
       l_connections.remove(signal)        
+
+   f.close
 
    ###############################################################
    #          CREATE VHDL DESCRIPTION OF THE CIRCUIT             #    
@@ -204,7 +226,7 @@ def main(argv):
    target = open(outputfile, 'w')
    
    # Write header with author information and statistics
-   entityname = inputfile[0:inputfile.find('.')]
+   
    now = datetime.datetime.now()
 
    target.write('------------------------------------------------------------------------\n')
@@ -237,12 +259,7 @@ def main(argv):
    target.write('\t);\n')		
    target.write('end entity; \n\n')		
 
-   #
-   print 'entity %s has the following' % entityname     	
-   print 'inputs: %s' % l_inputs
-   print 'outputs: %s' % l_outputs
-   #print sorted(l_connections)
-   #print len(l_connections)
+  
 
    #Write opening line of architecture
    target.write('architecture rtl of %s is\n\n' % entityname)
@@ -297,6 +314,34 @@ def main(argv):
       target.write(lis_nor4.writePnortMap(l_nor_gates[i]))    
    target.write('\nend architecture;\n')   
    target.close
+
+   if verbose == True:
+    print '\nThe following VHDL design has been created from the inputfile:\n'
+    target = open(outputfile, 'r')
+    for line in target:
+      print line[0:len(line)-1]
+   ###############################################################
+   #          CREATE STUCK-AT-FAULT DESCRIPTION FILE             #    
+   ###############################################################
+   # Open outputfile in write mode
+   faultfile = '%s.fdf' % entityname
+   target = open(faultfile, 'w')
+   
+   # Write header with author information and statistics
+   target.write('# Stuck-at-fault description file for circuit %s\n' % entityname)
+   target.write('# Created by bench2vhdl on %d-%d-%d\n' % (now.year, now.month, now.day) )
+   target.write('signal_name;s-a-1 det;s-a-0 det\n')
+   for signal in l_inputs:
+     target.write('%s;;\n' % signal)
+   for signal in l_outputs:
+     target.write('%s;;\n' % signal)
+   target.write('#;#;#\n')
+   for signal in l_connections:
+     target.write('%s;;\n' % signal)
+   target.close
+
+   if verbose == True:
+    print 'stuck-at-fault description file written to %s' % faultfile
 
 if __name__ == "__main__":
    main(sys.argv[1:])
