@@ -13,6 +13,7 @@ __status__ = "Development"
 import sys, getopt
 import datetime
 import re
+import os.path
 
 # Import classes for lis_dff and lis_gates
 from dff import dff
@@ -63,6 +64,8 @@ def main(argv):
    l_nor_gates = []
    l_connections = []
    
+   verbosity_level = '1'
+
    # Print some information for the user if verbose made has been activated
    if verbose == True:
     print 'This is bench2vhdl; verbose mode activated'
@@ -72,7 +75,8 @@ def main(argv):
    ###############################################################
    #                  PROCESS .BENCH INPUT FILE                  #    
    ###############################################################
-   entityname = inputfile[0:inputfile.find('.')]
+   entityname = os.path.basename(inputfile)
+   entityname = entityname[0:entityname.find('.')]
    if verbose == True:
      print 'Parsing input file for entity %s .....' % entityname
 
@@ -226,7 +230,7 @@ def main(argv):
    target = open(outputfile, 'w')
    
    # Write header with author information and statistics
-   
+   #entityname = inputfile[0:inputfile.find('.')]
    now = datetime.datetime.now()
 
    target.write('------------------------------------------------------------------------\n')
@@ -315,7 +319,7 @@ def main(argv):
    target.write('\nend architecture;\n')   
    target.close
 
-   if verbose == True:
+   if verbose == True and verbosity_level == '2':
     print '\nThe following VHDL design has been created from the inputfile:\n'
     target = open(outputfile, 'r')
     for line in target:
