@@ -35,7 +35,7 @@ end entity;
 architecture rtl of s298 is
 begin
 
---Flip-flops
+--Flip-flops (total number: 14)
 DFF_0:	 lis_dff port map( clk => clk, Q_out => G10, D_in => G29, reset => reset );
 DFF_1:	 lis_dff port map( clk => clk, Q_out => G11, D_in => G30, reset => reset );
 DFF_2:	 lis_dff port map( clk => clk, Q_out => G12, D_in => G34, reset => reset );
@@ -51,7 +51,7 @@ DFF_11:	 lis_dff port map( clk => clk, Q_out => G21, D_in => G113, reset => rese
 DFF_12:	 lis_dff port map( clk => clk, Q_out => G22, D_in => G119, reset => reset );
 DFF_13:	 lis_dff port map( clk => clk, Q_out => G23, D_in => G125, reset => reset );
 
---Inverters
+--Inverters (total number: 44)
 INV_0:	 lis_not port map( A => G130, Z => G28 );
 INV_1:	 lis_not port map( A => G10, Z => G38 );
 INV_2:	 lis_not port map( A => G13, Z => G40 );
@@ -97,7 +97,7 @@ INV_41:	 lis_not port map( A => I235, Z => G132 );
 INV_42:	 lis_not port map( A => G21, Z => I238 );
 INV_43:	 lis_not port map( A => I238, Z => G133 );
 
---AND-gates
+--AND-gates (total number: 31)
 AND2_0:	 LIS_AND2 port map( A => G28, B => G50, Z => G26);
 AND2_1:	 LIS_AND2 port map( A => G51, B => G28, Z => G27);
 AND3_0:	 LIS_AND3 port map( A => G10, B => G45, C => G13, Z => G31 );
@@ -129,13 +129,33 @@ AND2_17:	 LIS_AND2 port map( A => G120, B => G121, Z => G122);
 AND2_18:	 LIS_AND2 port map( A => G124, B => G22, Z => G123);
 AND2_19:	 LIS_AND2 port map( A => G126, B => G127, Z => G128);
 AND2_20:	 LIS_AND2 port map( A => G131, B => G23, Z => G129);
-AND3_7:	 LIS_AND3 port map( A => G12, B => G11, C => G10, Z => G41 );
-AND3_8:	 LIS_AND3 port map( A => G24, B => G25, C => G28, Z => G43 );
-AND4_3:	 LIS_AND4 port map( A => G13, B => G45, C => G46, D => G10, Z => G52 );
-AND4_4:	 LIS_AND4 port map( A => G59, B => G54, C => G22, D => G61, Z => G65 );
-AND4_5:	 LIS_AND4 port map( A => G83, B => G84, C => G85, D => G108, Z => G97 );
-AND4_6:	 LIS_AND4 port map( A => G68, B => G69, C => G70, D => G108, Z => G101 );
-AND2_21:	 LIS_AND2 port map( A => G77, B => G78, Z => G106);
-AND4_7:	 LIS_AND4 port map( A => G71, B => G72, C => G73, D => G14, Z => G109 );
-AND4_8:	 LIS_AND4 port map( A => G79, B => G80, C => G81, D => G108, Z => G116 );
+
+--OR-gates (total number: 16)
+OR4_0:	 LIS_OR4 port map( A => G38, B => G46, C => G45, D => G40, Z => G24 );
+OR3_0:	 LIS_OR3 port map( A => G38, B => G11, C => G12, Z => G25 );
+OR4_1:	 LIS_OR4 port map( A => G11, B => G12, C => G13, D => G96, Z => G68 );
+OR2_0:	 LIS_OR2 port map( A => G103, B => G18, Z => G69 );
+OR2_1:	 LIS_OR2 port map( A => G103, B => G14, Z => G70 );
+OR3_1:	 LIS_OR3 port map( A => G82, B => G12, C => G13, Z => G71 );
+OR2_2:	 LIS_OR2 port map( A => G91, B => G20, Z => G72 );
+OR2_3:	 LIS_OR2 port map( A => G103, B => G20, Z => G73 );
+OR4_2:	 LIS_OR4 port map( A => G112, B => G103, C => G96, D => G19, Z => G77 );
+OR2_4:	 LIS_OR2 port map( A => G108, B => G76, Z => G78 );
+OR2_5:	 LIS_OR2 port map( A => G103, B => G14, Z => G79 );
+OR2_6:	 LIS_OR2 port map( A => G11, B => G14, Z => G80 );
+OR2_7:	 LIS_OR2 port map( A => G12, B => G13, Z => G81 );
+OR4_3:	 LIS_OR4 port map( A => G11, B => G12, C => G13, D => G96, Z => G83 );
+OR3_2:	 LIS_OR3 port map( A => G82, B => G91, C => G14, Z => G84 );
+OR3_3:	 LIS_OR3 port map( A => G91, B => G96, C => G17, Z => G85 );
+
+--NAND-gates (total number: 9)
+NAND3_0: LIS_NAND3 port map( A => G12, B => G11, C => G10, Z => G41 );
+NAND3_1: LIS_NAND3 port map( A => G24, B => G25, C => G28, Z => G43 );
+NAND4_0: LIS_NAND4 port map( A => G13, B => G45, C => G46, D => G10, Z => G52 );
+NAND4_1: LIS_NAND4 port map( A => G59, B => G54, C => G22, D => G61, Z => G65 );
+NAND4_2: LIS_NAND4 port map( A => G83, B => G84, C => G85, D => G108, Z => G97 );
+NAND4_3: LIS_NAND4 port map( A => G68, B => G69, C => G70, D => G108, Z => G101 );
+NAND2_0: LIS_NAND2 port map( A => G77, B => G78, Z => G106 );
+NAND4_4: LIS_NAND4 port map( A => G71, B => G72, C => G73, D => G14, Z => G109 );
+NAND4_5: LIS_NAND4 port map( A => G79, B => G80, C => G81, D => G108, Z => G116 );
 end architecture;

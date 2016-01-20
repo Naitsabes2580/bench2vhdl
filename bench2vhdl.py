@@ -12,12 +12,20 @@ __status__ = "Development"
 
 import sys, getopt
 import datetime
+import re
 
+# Import classes for lis_dff and lis_gates
 from dff import dff
 from lis_not import lis_not
 from and2 import and2
 from lis_and3 import lis_and3
 from lis_and4 import lis_and4
+from lis_or2 import lis_or2
+from lis_or3 import lis_or3
+from lis_or4 import lis_or4
+from lis_nand2 import lis_nand2
+from lis_nand3 import lis_nand3
+from lis_nand4 import lis_nand4
 
 def main(argv):
    inputfile = ''
@@ -80,7 +88,7 @@ def main(argv):
           Z = line[0:line.find('=')-1]          
           new_inverter = lis_not(A,Z)
           l_inverters.append(new_inverter)
-        elif 'AND' in line:
+        elif 'AND' in line and not 'NAND' in line:
           open_bracket = line.find('(')+1
           close_bracket = line.find(')')
           gate_size = line.count(',', open_bracket, close_bracket) + 1
@@ -97,6 +105,41 @@ def main(argv):
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_and4 = lis_and4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
             l_and_gates.append(new_and4)
+        elif 'OR' in line and not 'NOR' in line: 
+          open_bracket = line.find('(')+1
+          close_bracket = line.find(')')
+          gate_size = line.count(',', open_bracket, close_bracket) + 1
+          Z = line[0:line.find('=')-1]            
+          if gate_size == 2:            
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_or2 = lis_or2(l_input_ports[0].strip(), l_input_ports[1].strip(), Z)
+            l_or_gates.append(new_or2)
+          elif gate_size == 3:
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_or3 = lis_or3(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), Z)            
+            l_or_gates.append(new_or3)
+          elif gate_size == 4:
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_or4 = lis_or4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
+            l_or_gates.append(new_or4)
+        elif 'NAND' in line:
+          open_bracket = line.find('(')+1
+          close_bracket = line.find(')')
+          gate_size = line.count(',', open_bracket, close_bracket) + 1
+          Z = line[0:line.find('=')-1]            
+          if gate_size == 2:            
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_nand2 = lis_nand2(l_input_ports[0].strip(), l_input_ports[1].strip(), Z)
+            l_nand_gates.append(new_nand2)
+          elif gate_size == 3:
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_nand3 = lis_nand3(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), Z)            
+            l_nand_gates.append(new_nand3)
+          elif gate_size == 4:
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_nand4 = lis_nand4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
+            l_nand_gates.append(new_nand4)
+
 
             
 
@@ -148,15 +191,15 @@ def main(argv):
    target.write('begin\n')
    #TODO: add architecture
    #Write flip-flops
-   target.write('\n--Flip-flops\n')
+   target.write('\n--Flip-flops (total number: %d)\n' % len(l_dffs))
    for i in range(0, len(l_dffs)):
        target.write('DFF_%d:\t lis_dff port map( clk => clk, Q_out => %s, D_in => % s, reset => reset );\n' % (i, l_dffs[i].Q_out, l_dffs[i].D_in) )    
-   target.write('\n--Inverters\n')
+   target.write('\n--Inverters (total number: %d)\n'% len(l_inverters))
    #Write inverters
    for i in range(0, len(l_inverters)):
        target.write('INV_%d:\t lis_not port map( A => %s, Z => %s );\n' % (i, l_inverters[i].A, l_inverters[i].Z) )
    #Write AND-gates
-   target.write('\n--AND-gates\n')
+   target.write('\n--AND-gates (total number: %d)\n' % len(l_and_gates))
    for i in range(0, len(l_and_gates)):       
        if isinstance(l_and_gates[i], and2):
          target.write(and2.writePortMap(l_and_gates[i]))
@@ -164,9 +207,25 @@ def main(argv):
          target.write(lis_and3.writePortMap(l_and_gates[i]))
        elif isinstance(l_and_gates[i], lis_and4):
          target.write(lis_and4.writePortMap(l_and_gates[i]))   
-   target.write('end architecture;\n')
-
-
+   #Write OR-gates
+   target.write('\n--OR-gates (total number: %d)\n' % len(l_or_gates))
+   for i in range(0, len(l_or_gates)):       
+    if isinstance(l_or_gates[i], lis_or2):
+      target.write(lis_or2.writePortMap(l_or_gates[i]))
+    elif isinstance(l_or_gates[i], lis_or3):
+      target.write(lis_or3.writePortMap(l_or_gates[i]))
+    elif isinstance(l_or_gates[i], lis_or4):
+      target.write(lis_or4.writePortMap(l_or_gates[i])) 
+   #Write NAND-gates
+   target.write('\n--NAND-gates (total number: %d)\n' % len(l_nand_gates))#
+   for i in range(0, len(l_nand_gates)):       
+       if isinstance(l_nand_gates[i], lis_nand2):
+         target.write(lis_nand2.writePortMap(l_nand_gates[i]))
+       elif isinstance(l_nand_gates[i], lis_nand3):
+         target.write(lis_nand3.writePortMap(l_nand_gates[i]))
+       elif isinstance(l_nand_gates[i], lis_nand4):
+         target.write(lis_nand4.writePortMap(l_nand_gates[i]))   
+   target.write('end architecture;\n')   
    target.close
 
 if __name__ == "__main__":
