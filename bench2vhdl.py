@@ -32,7 +32,7 @@ from lis_nor4 import lis_nor4
 
 def main(argv):
    inputfile = ''
-   outputfile = ''
+   outputfile = ''   
    try:
       opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
    except getopt.GetoptError:
@@ -59,43 +59,57 @@ def main(argv):
    l_nand_gates = []
    l_or_gates = []
    l_nor_gates = []
-
+   l_connections = []
+   
+   ###############################################################
+   #                  PROCESS .BENCH INPUT FILE                  #    
+   ###############################################################
    with open(inputfile) as f:
     for line in f:
         # Skip comment lines
         if line.startswith('#') == True: 
-        	l_statistics.append('--% s' % line)
+          l_statistics.append('--% s' % line)
           #print 'comment detected: %s' % line
         # Detect inputs
         if line.startswith('INPUT') == True:	
-        	open_bracket = line.find('(')+1
-        	close_bracket = line.find(')')	
-        	l_inputs.append(line[open_bracket:close_bracket])    	
+          open_bracket = line.find('(')+1
+          close_bracket = line.find(')')	
+          l_inputs.append(line[open_bracket:close_bracket])
         # Detect outputs
         elif line.startswith('OUTPUT') == True:	
-        	open_bracket = line.find('(')+1
-        	close_bracket = line.find(')')	
-        	l_outputs.append(line[open_bracket:close_bracket])
+          open_bracket = line.find('(')+1
+          close_bracket = line.find(')')	
+          l_outputs.append(line[open_bracket:close_bracket])          
         #Processing of D flip-flops
         elif 'DFF' in line:
           open_bracket = line.find('(')+1
           close_bracket = line.find(')')            
           D_in = line[open_bracket:close_bracket]
+          if not(D_in.strip() in l_connections): 
+            l_connections.append(D_in.strip())
           Q_out = line[0:line.find('=')-1]
+          if not(Q_out.strip() in l_connections): 
+            l_connections.append(Q_out.strip())
           new_dff = dff(D_in, Q_out, 'clk', 'reset')          
-          l_dffs.append(new_dff)
+          l_dffs.append(new_dff)                    
         elif 'NOT' in line:
           open_bracket = line.find('(')+1
           close_bracket = line.find(')')            
           A = line[open_bracket:close_bracket]
+          if not (A.strip() in l_connections):
+            l_connections.append(A.strip())
           Z = line[0:line.find('=')-1]          
+          if not (Z.strip() in l_connections):
+            l_connections.append(Z.strip())
           new_inverter = lis_not(A,Z)
           l_inverters.append(new_inverter)
-        elif 'AND' in line and not 'NAND' in line:
+        elif 'AND' in line and not 'NAND' in line and not '#' in line:
           open_bracket = line.find('(')+1
           close_bracket = line.find(')')
           gate_size = line.count(',', open_bracket, close_bracket) + 1
           Z = line[0:line.find('=')-1]            
+          if not(Z.strip() in l_connections):
+            l_connections.append(Z.strip())
           if gate_size == 2:            
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_and2 = and2(l_input_ports[0].strip(), l_input_ports[1].strip(), Z)
@@ -108,11 +122,16 @@ def main(argv):
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_and4 = lis_and4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
             l_and_gates.append(new_and4)
-        elif 'OR' in line and not 'NOR' in line: 
+          for signal in l_input_ports:
+            if not(signal.strip() in l_connections):
+              l_connections.append(signal.strip())
+        elif 'OR' in line and not 'NOR' in line and not '#' in line: 
           open_bracket = line.find('(')+1
           close_bracket = line.find(')')
           gate_size = line.count(',', open_bracket, close_bracket) + 1
-          Z = line[0:line.find('=')-1]            
+          Z = line[0:line.find('=')-1]
+          if not(Z.strip() in l_connections):
+            l_connections.append(Z.strip())            
           if gate_size == 2:            
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_or2 = lis_or2(l_input_ports[0].strip(), l_input_ports[1].strip(), Z)
@@ -125,11 +144,16 @@ def main(argv):
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_or4 = lis_or4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
             l_or_gates.append(new_or4)
-        elif 'NAND' in line:
+          for signal in l_input_ports:
+            if not(signal.strip() in l_connections):
+              l_connections.append(signal.strip())
+        elif 'NAND' in line and not '#' in line:
           open_bracket = line.find('(')+1
           close_bracket = line.find(')')
           gate_size = line.count(',', open_bracket, close_bracket) + 1
-          Z = line[0:line.find('=')-1]            
+          Z = line[0:line.find('=')-1]
+          if not(Z.strip() in l_connections):
+            l_connections.append(Z.strip())              
           if gate_size == 2:            
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_nand2 = lis_nand2(l_input_ports[0].strip(), l_input_ports[1].strip(), Z)
@@ -137,16 +161,21 @@ def main(argv):
           elif gate_size == 3:
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_nand3 = lis_nand3(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), Z)            
-            l_nand_gates.append(new_nand3)
+            l_nand_gates.append(new_nand3)            
           elif gate_size == 4:
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_nand4 = lis_nand4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
             l_nand_gates.append(new_nand4)
-        elif 'NOR' in line: 
+          for signal in l_input_ports:
+            if not(signal.strip() in l_connections):
+              l_connections.append(signal.strip())            
+        elif 'NOR' in line and not '#' in line: 
           open_bracket = line.find('(')+1
           close_bracket = line.find(')')
           gate_size = line.count(',', open_bracket, close_bracket) + 1
-          Z = line[0:line.find('=')-1]            
+          Z = line[0:line.find('=')-1]
+          if not(Z.strip() in l_connections):
+            l_connections.append(Z.strip())                       
           if gate_size == 2:            
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_nor2 = lis_nor2(l_input_ports[0].strip(), l_input_ports[1].strip(), Z)
@@ -159,10 +188,18 @@ def main(argv):
             l_input_ports = line[open_bracket:close_bracket].split(',')
             new_nor4 = lis_nor4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
             l_nor_gates.append(new_nor4)
+          for signal in l_input_ports:
+            if not(signal.strip() in l_connections):
+              l_connections.append(signal.strip())
 
+   # Post processing of l_connections
+   for signal in l_connections:
+     if signal in l_inputs or signal in l_outputs:
+      l_connections.remove(signal)        
 
-            
-
+   ###############################################################
+   #          CREATE VHDL DESCRIPTION OF THE CIRCUIT             #    
+   ###############################################################
    # Open outputfile in write mode
    target = open(outputfile, 'w')
    
@@ -182,36 +219,38 @@ def main(argv):
         target.write(statline)
    target.write('------------------------------------------------------------------------\n')
    # Write library imports to outputfile
-   target.write('library IEEE;\n use IEEE.std_logic_1164.all; \n \n')
-   target.write('library lis_lib;\n use lis_lib.ser_bist.all; \n \n')
+   target.write('library IEEE;\nuse IEEE.std_logic_1164.all; \n \n')
+   target.write('library lis_lib;\nuse lis_lib.ser_bist.all; \n \n')
    
    #Write entity declaration to outputfile 
    
    target.write('entity %s is\n' % entityname)
-   target.write('port (\n')
-   target.write('clk : in std_logic; \n')
-   target.write('reset : in std_logic; \n')
+   target.write('\tport (\n')
+   target.write('\t\tclk : in std_logic; \n')
+   target.write('\t\treset : in std_logic; \n')
    for input_port in l_inputs:
-   		target.write(input_port)
-   		target.write(': in std_logic; \n')
-   for i in range(0, len(l_outputs)-1):
-   		target.write(l_outputs[i])
-   		target.write(': out std_logic; \n')
-   target.write(l_outputs[len(l_outputs)-1])
-   target.write(': out std_logic \n')
-   target.write(');\n')		
+   		#target.write(input_port)
+   		target.write('\t\t%s: in std_logic; \n' % input_port)
+   for i in range(0, len(l_outputs)-1):   		
+   		target.write('\t\t%s: out std_logic; \n' % l_outputs[i])
+   target.write('\t\t%s: out std_logic \n' % l_outputs[len(l_outputs)-1])
+   target.write('\t);\n')		
    target.write('end entity; \n\n')		
 
    #
    print 'entity %s has the following' % entityname     	
    print 'inputs: %s' % l_inputs
    print 'outputs: %s' % l_outputs
+   #print sorted(l_connections)
+   #print len(l_connections)
 
-   #Write architecture
-   target.write('architecture rtl of %s is\n' % entityname)
-   #TODO: add signal definitions
-   target.write('begin\n')
-   #TODO: add architecture
+   #Write opening line of architecture
+   target.write('architecture rtl of %s is\n\n' % entityname)
+   #Write interconnecting signals
+   for signal in l_connections:
+     target.write('\tsignal %s : std_logic;\n' % signal)
+   #Write begin of architecture
+   target.write('\nbegin\n')   
    #Write flip-flops
    target.write('\n--Flip-flops (total number: %d)\n' % len(l_dffs))
    for i in range(0, len(l_dffs)):

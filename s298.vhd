@@ -13,28 +13,157 @@
 --# 75 gates (31 ANDs + 9 NANDs + 16 ORs + 19 NORs)
 ------------------------------------------------------------------------
 library IEEE;
- use IEEE.std_logic_1164.all; 
+use IEEE.std_logic_1164.all; 
  
 library lis_lib;
- use lis_lib.ser_bist.all; 
+use lis_lib.ser_bist.all; 
  
 entity s298 is
-port (
-clk : in std_logic; 
-reset : in std_logic; 
-G0: in std_logic; 
-G1: in std_logic; 
-G2: in std_logic; 
-G117: out std_logic; 
-G132: out std_logic; 
-G66: out std_logic; 
-G118: out std_logic; 
-G133: out std_logic; 
-G67: out std_logic 
-);
+	port (
+		clk : in std_logic; 
+		reset : in std_logic; 
+		G0: in std_logic; 
+		G1: in std_logic; 
+		G2: in std_logic; 
+		G117: out std_logic; 
+		G132: out std_logic; 
+		G66: out std_logic; 
+		G118: out std_logic; 
+		G133: out std_logic; 
+		G67: out std_logic 
+	);
 end entity; 
 
 architecture rtl of s298 is
+
+	signal G29 : std_logic;
+	signal G10 : std_logic;
+	signal G30 : std_logic;
+	signal G11 : std_logic;
+	signal G34 : std_logic;
+	signal G12 : std_logic;
+	signal G39 : std_logic;
+	signal G13 : std_logic;
+	signal G44 : std_logic;
+	signal G14 : std_logic;
+	signal G56 : std_logic;
+	signal G15 : std_logic;
+	signal G86 : std_logic;
+	signal G16 : std_logic;
+	signal G92 : std_logic;
+	signal G17 : std_logic;
+	signal G98 : std_logic;
+	signal G18 : std_logic;
+	signal G102 : std_logic;
+	signal G19 : std_logic;
+	signal G107 : std_logic;
+	signal G20 : std_logic;
+	signal G113 : std_logic;
+	signal G21 : std_logic;
+	signal G119 : std_logic;
+	signal G22 : std_logic;
+	signal G125 : std_logic;
+	signal G23 : std_logic;
+	signal G130 : std_logic;
+	signal G28 : std_logic;
+	signal G38 : std_logic;
+	signal G40 : std_logic;
+	signal G45 : std_logic;
+	signal G46 : std_logic;
+	signal G50 : std_logic;
+	signal G51 : std_logic;
+	signal G54 : std_logic;
+	signal G55 : std_logic;
+	signal G59 : std_logic;
+	signal G60 : std_logic;
+	signal G64 : std_logic;
+	signal I155 : std_logic;
+	signal I158 : std_logic;
+	signal G76 : std_logic;
+	signal G82 : std_logic;
+	signal G87 : std_logic;
+	signal G91 : std_logic;
+	signal G93 : std_logic;
+	signal G96 : std_logic;
+	signal G99 : std_logic;
+	signal G103 : std_logic;
+	signal G112 : std_logic;
+	signal G108 : std_logic;
+	signal G114 : std_logic;
+	signal I210 : std_logic;
+	signal I213 : std_logic;
+	signal G124 : std_logic;
+	signal G120 : std_logic;
+	signal G121 : std_logic;
+	signal I221 : std_logic;
+	signal G131 : std_logic;
+	signal G126 : std_logic;
+	signal G127 : std_logic;
+	signal I229 : std_logic;
+	signal I232 : std_logic;
+	signal I235 : std_logic;
+	signal I238 : std_logic;
+	signal G26 : std_logic;
+	signal G27 : std_logic;
+	signal G31 : std_logic;
+	signal G32 : std_logic;
+	signal G33 : std_logic;
+	signal G35 : std_logic;
+	signal G36 : std_logic;
+	signal G37 : std_logic;
+	signal G42 : std_logic;
+	signal G41 : std_logic;
+	signal G48 : std_logic;
+	signal G47 : std_logic;
+	signal G49 : std_logic;
+	signal G52 : std_logic;
+	signal G57 : std_logic;
+	signal G61 : std_logic;
+	signal G58 : std_logic;
+	signal G65 : std_logic;
+	signal G62 : std_logic;
+	signal G63 : std_logic;
+	signal G74 : std_logic;
+	signal G75 : std_logic;
+	signal G88 : std_logic;
+	signal G89 : std_logic;
+	signal G90 : std_logic;
+	signal G94 : std_logic;
+	signal G95 : std_logic;
+	signal G100 : std_logic;
+	signal G105 : std_logic;
+	signal G104 : std_logic;
+	signal G110 : std_logic;
+	signal G109 : std_logic;
+	signal G111 : std_logic;
+	signal G115 : std_logic;
+	signal G122 : std_logic;
+	signal G123 : std_logic;
+	signal G128 : std_logic;
+	signal G129 : std_logic;
+	signal G24 : std_logic;
+	signal G25 : std_logic;
+	signal G68 : std_logic;
+	signal G69 : std_logic;
+	signal G70 : std_logic;
+	signal G71 : std_logic;
+	signal G72 : std_logic;
+	signal G73 : std_logic;
+	signal G77 : std_logic;
+	signal G78 : std_logic;
+	signal G79 : std_logic;
+	signal G80 : std_logic;
+	signal G81 : std_logic;
+	signal G83 : std_logic;
+	signal G84 : std_logic;
+	signal G85 : std_logic;
+	signal G43 : std_logic;
+	signal G97 : std_logic;
+	signal G101 : std_logic;
+	signal G106 : std_logic;
+	signal G116 : std_logic;
+	signal G53 : std_logic;
+
 begin
 
 --Flip-flops (total number: 14)
@@ -181,4 +310,5 @@ NOR2_9:	 LIS_NOR2 port map( A => G62, B => G63, Z => G112 );
 NOR2_10:	 LIS_NOR2 port map( A => G115, B => G116, Z => G113 );
 NOR3_3:	 LIS_NOR3 port map( A => G122, B => G123, C => G130, Z => G119 );
 NOR3_4:	 LIS_NOR3 port map( A => G128, B => G129, C => G130, Z => G125 );
+
 end architecture;
