@@ -11,8 +11,10 @@ __email__ = "sebastian.kroesche@mytum.de"
 __status__ = "Development"
 
 import sys, getopt
+import datetime
 
 from dff import dff
+from lis_not import lis_not
 
 def main(argv):
    inputfile = ''
@@ -34,6 +36,7 @@ def main(argv):
    print 'Output file is', outputfile
 
    # Initialize lists for inputs, outputs, FFs and gates
+   l_statistics = []
    l_inputs = []
    l_outputs = []
    l_dffs = []
@@ -47,9 +50,10 @@ def main(argv):
     for line in f:
         # Skip comment lines
         if line.startswith('#') == True: 
-        	print 'comment detected: %s' % line
+        	l_statistics.append('--% s' % line)
+          #print 'comment detected: %s' % line
         # Detect inputs
-        elif line.startswith('INPUT') == True:	
+        if line.startswith('INPUT') == True:	
         	open_bracket = line.find('(')+1
         	close_bracket = line.find(')')	
         	l_inputs.append(line[open_bracket:close_bracket])    	
@@ -58,11 +62,46 @@ def main(argv):
         	open_bracket = line.find('(')+1
         	close_bracket = line.find(')')	
         	l_outputs.append(line[open_bracket:close_bracket])
+        #Processing of D flip-flops
+        elif 'DFF' in line:
+          open_bracket = line.find('(')+1
+          close_bracket = line.find(')')            
+          D_in = line[open_bracket:close_bracket]
+          Q_out = line[0:line.find('=')-1]
+          new_dff = dff(D_in, Q_out, 'clk', 'reset')          
+          l_dffs.append(new_dff)
+        elif 'NOT' in line:
+          open_bracket = line.find('(')+1
+          close_bracket = line.find(')')            
+          A = line[open_bracket:close_bracket]
+          Z = line[0:line.find('=')-1]          
+          new_inverter = lis_not(A,Z)
+          l_inverters.append(new_inverter)
+
+   # Open outputfile in write mode
+   target = open(outputfile, 'w')
+   
+   # Write header with author information and statistics
+   entityname = inputfile[0:inputfile.find('.')]
+   now = datetime.datetime.now()
+
+   target.write('------------------------------------------------------------------------\n')
+   target.write('--#LIS#\n')
+   target.write('--Author: Sebastian Kroesche\n')
+   target.write('--Date: %d.%d.%d \n' % (now.day, now.month, now.year) )
+   target.write('--Description: Implementation of ISCAS89 %s circuit with\n' % entityname)
+   target.write('--             D-type flip-flops\n')
+   target.write('--             generated with bench2vhdl\n')
+   target.write('--Circuit statistics\n')
+   for statline in l_statistics:
+        target.write(statline)
+   target.write('------------------------------------------------------------------------\n')
+   # Write library imports to outputfile
+   target.write('library IEEE;\n use IEEE.std_logic_1164.all; \n \n')
+   target.write('library lis_lib;\n use lis_lib.ser_bist.all; \n \n')
    
    #Write entity declaration to outputfile 
-   target = open(outputfile, 'w')
-   entityname = inputfile[0:inputfile.find('.')]
-  
+   
    target.write('entity %s is\n' % entityname)
    target.write('port (\n')
    for input_port in l_inputs:
@@ -86,6 +125,14 @@ def main(argv):
    #TODO: add signal definitions
    target.write('begin\n')
    #TODO: add architecture
+   #Write flip-flops
+   target.write('\n--Flip-flops\n')
+   for i in range(0, len(l_dffs)):
+       target.write('DFF_%d:\t lis_dff port map( clk => clk, Q_out => %s, D_in => % s, reset => reset );\n' % (i, l_dffs[i].Q_out, l_dffs[i].D_in) )    
+   target.write('\n--Inverters\n')
+   #Write inverters
+   for i in range(0, len(l_inverters)):
+       target.write('INV_%d:\t lis_not port map( A => %s, Z => %s );\n' % (i, l_inverters[i].A, l_inverters[i].Z) )
    target.write('end architecture;\n')
 
    target.close
