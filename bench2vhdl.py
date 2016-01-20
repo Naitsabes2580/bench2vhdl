@@ -15,6 +15,9 @@ import datetime
 
 from dff import dff
 from lis_not import lis_not
+from and2 import and2
+from lis_and3 import lis_and3
+from lis_and4 import lis_and4
 
 def main(argv):
    inputfile = ''
@@ -77,6 +80,25 @@ def main(argv):
           Z = line[0:line.find('=')-1]          
           new_inverter = lis_not(A,Z)
           l_inverters.append(new_inverter)
+        elif 'AND' in line:
+          open_bracket = line.find('(')+1
+          close_bracket = line.find(')')
+          gate_size = line.count(',', open_bracket, close_bracket) + 1
+          Z = line[0:line.find('=')-1]            
+          if gate_size == 2:            
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_and2 = and2(l_input_ports[0].strip(), l_input_ports[1].strip(), Z)
+            l_and_gates.append(new_and2)
+          elif gate_size == 3:
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_and3 = lis_and3(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), Z)            
+            l_and_gates.append(new_and3)
+          elif gate_size == 4:
+            l_input_ports = line[open_bracket:close_bracket].split(',')
+            new_and4 = lis_and4(l_input_ports[0].strip(), l_input_ports[1].strip(), l_input_ports[2].strip(), l_input_ports[3].strip(), Z)            
+            l_and_gates.append(new_and4)
+
+            
 
    # Open outputfile in write mode
    target = open(outputfile, 'w')
@@ -133,7 +155,17 @@ def main(argv):
    #Write inverters
    for i in range(0, len(l_inverters)):
        target.write('INV_%d:\t lis_not port map( A => %s, Z => %s );\n' % (i, l_inverters[i].A, l_inverters[i].Z) )
+   #Write AND-gates
+   target.write('\n--AND-gates\n')
+   for i in range(0, len(l_and_gates)):       
+       if isinstance(l_and_gates[i], and2):
+         target.write(and2.writePortMap(l_and_gates[i]))
+       elif isinstance(l_and_gates[i], lis_and3):
+         target.write(lis_and3.writePortMap(l_and_gates[i]))
+       elif isinstance(l_and_gates[i], lis_and4):
+         target.write(lis_and4.writePortMap(l_and_gates[i]))   
    target.write('end architecture;\n')
+
 
    target.close
 

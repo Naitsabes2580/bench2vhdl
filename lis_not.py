@@ -1,4 +1,4 @@
-#This class is for D flip-flops
+#This class is for inverters
 class lis_not:
    'Common base class for all inverters'
    invertersCount = 0
