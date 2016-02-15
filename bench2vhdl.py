@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+i#!/usr/bin/env python
 
 """bench2vhdl.py: converts ISCAS89 bench format to VHDL"""
 
@@ -236,7 +236,7 @@ def main(argv):
    target.write('------------------------------------------------------------------------\n')
    target.write('--#LIS#\n')
    target.write('--Author: Sebastian Kroesche\n')
-   target.write('--Date: %d.%d.%d \n' % (now.day, now.month, now.year) )
+   target.write('--Date: %02d.%02d.%d \n' % (now.day, now.month, now.year) )
    target.write('--Description: Implementation of ISCAS89 %s circuit with\n' % entityname)
    target.write('--             D-type flip-flops\n')
    target.write('--             generated with bench2vhdl\n')
@@ -333,15 +333,15 @@ def main(argv):
    
    # Write header with author information and statistics
    target.write('# Stuck-at-fault description file for circuit %s\n' % entityname)
-   target.write('# Created by bench2vhdl on %d-%d-%d\n' % (now.year, now.month, now.day) )
-   target.write('signal_name;s-a-1 det;s-a-0 det\n')
+   target.write('# Created by bench2vhdl on %d-%02d-%02d\n' % (now.year, now.month, now.day) )
+#   target.write('signal_name;s-a-1 det;s-a-0 det\n')
    for signal in l_inputs:
-     target.write('%s;;\n' % signal)
+     target.write('%s\n' % signal)
    for signal in l_outputs:
-     target.write('%s;;\n' % signal)
-   target.write('#;#;#\n')
+     target.write('%s\n' % signal)
+#   target.write('#;#;#\n')
    for signal in l_connections:
-     target.write('%s;;\n' % signal)
+     target.write('%s\n' % signal)
    target.close
 
    if verbose == True:

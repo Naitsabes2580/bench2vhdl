@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""bench2vhdl2.py: converts ISCAS89 bench format to VHDL, inserts lis_ser_bist_ff instead of DFFs"""
+"""bench2vhdl.py: converts ISCAS89 bench format to VHDL, inserts lis_ser_bist_ff instead of DFFs"""
 
 __author__ = "Sebastian Kroesche"
 __copyright__ = "Copyright 2016, Sebastian Kroesche"

@@ -1,0 +1,22 @@
+# Stuck-at-fault description file for circuit s27
+# Created by bench2vhdl on 2016-1-22
+signal_name;s-a-1 det;s-a-0 det
+G0;;
+G1;;
+G2;;
+G3;;
+G17;;
+#;#;#
+G10;;
+G5;;
+G11;;
+G6;;
+G13;;
+G7;;
+G14;;
+G8;;
+G15;;
+G12;;
+G16;;
+G9;;
+G2;;
