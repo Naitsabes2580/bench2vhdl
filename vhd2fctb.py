@@ -72,6 +72,7 @@ def main(argv):
    l_generics = []
    l_entity_inputs = [] 
    l_entity_outputs = [] 
+   l_signals = []
 
    in_file = open(inputfile)
    in_file.seek(0)
@@ -131,10 +132,25 @@ def main(argv):
         l_libraries.append(line)
    
 
+   l_libraries.append('\nuse ieee.std_logic_textio.all;\nuse std.textio.all;\n')
+   l_libraries.append('\nlibrary modelsim_lib;\nuse modelsim_lib.util.all;\n')
+   l_libraries.append('\nuse ieee.std_logic_textio.all;\nuse std.textio.all;\n')
+
+
    tb_entity = vhdl_entity(entityname + '_fc_tb',[],[],[])   
    uut_component = vhdl_component(entityname,l_generics,l_entity_inputs,l_entity_outputs)     
    
-
+   # Process fault description file
+   with open(faultfile) as f:
+    for line in f:
+        # Skip comment lines
+        if not (line.startswith('#') == True): 
+          #l_statistics.append('--% s' % line)
+          #print 'comment detected: %s' % line
+        #else:
+          l_signals.append(line.strip())
+          #print 'signal detected: %s' % line
+   f.close() 
 
    #Write testbench to file
 
@@ -171,13 +187,85 @@ def main(argv):
 
    ## part with my specific signals#
    target.write('\n')
-   target.write('\tconstant clock_period: time := 10 ns;')
+   target.write('\tconstant clock_period: time := 10 ns;\n')
    target.write('\tsignal stop_the_clock: boolean;\n')
-   target.write('\ttype t_fsm_state is( idle, ser_detect, ser_correct, bist_init, bist_seq_start, bist_sig_scan_completed, bist_eval, bist_end );\n')
+   target.write('\ttype t_fsm_state is( idle, ser_detect, ser_correct, bist_init, bist_seq_start, bist_sig_scan_completed, bist_eval, bist_end );\n\n')
+   target.write('\tsignal spy_ctrl_state : t_fsm_state;\n')
+   target.write('\tfile out_file: text open write_mode is "test_out.fcf";\n')
 
-   target.write('\nbegin\n')
+   target.write('\nbegin\n\n')
+   
+   target.write('\tinit_signal_spy("/%s_fc_tb/uut/CTRL/current_state","/%s_fc_tb/spy_ctrl_state", 1);\n\n' % (entityname, entityname))
+
+   ## Write uut component mapping
+   target.write(vhdl_component.writeComponentMap(uut_component))
+
+   ##Write stimulus process
+   target.write('\n\nstimulus: process\n')
+   target.write('\tvariable s_a_line : line;\n')
+   target.write('begin\n')
+   for i in range(0,len(l_entity_inputs)):
+    if l_entity_inputs[i].name != 'reset':
+      target.write('\t%s\t<= \'0\';\n' % l_entity_inputs[i].name)
+   target.write('\treset\t<= \'1\';\n')
+   target.write('\twait for 10*clock_period;\n')
+   target.write('\treset\t<= \'0\';\n')
+   target.write('\n\t-- Determine fault free circuit signature\n')
+   target.write('\twait for 10*clock_period;\n')
+   target.write('\tBIST_start_in <= \'1\';\n')
+   target.write('\twait for clock_period;\n')
+   target.write('\tBIST_start_in <= \'0\';\n')          
+   target.write('\twait until BIST_Done_out = \'1\';\n')        
+   target.write('\twait for 0.1*clock_period;\n')
+   target.write('\tif BIST_result_out = \'1\' then\n')
+   target.write('\t\treport "Testing a successfull BIST execution passed successfully" severity note;\n')
+   target.write('\telse\n')
+   target.write('\t\treport "Testing a successfull BIST execution failed" severity failure;\n')
+   target.write('\tend if;\n\n')
+
+   target.write('\t-- Testing the fault coverage\n')
+   for signal in l_signals:
+    target.write('\t--------------------------------------------------------------------------------\n');
+    target.write('\t-- Testing signal %s with stuck-at-1 and stuck-at-0\n' % signal);
+    target.write('\twrite(s_a_line,string'); target.write("'("); target.write('"%s;"));\n' % signal);
+    target.write('\tsignal_force("/%s_fc_tb/uut/%s", "1", open, freeze, open, 0);\n' % (entityname, signal));            
+    target.write("\tBIST_start_in <= '1';\n");
+    target.write("\twait for clock_period;\n");
+    target.write("\tBIST_start_in <= '0';\n");
+    target.write("\twait until BIST_Done_out = '1';\n");
+    target.write("\twait for 0.2*clock_period;\n");  
+    target.write("\twrite(s_a_line, NOT BIST_result_out);\n");
+    target.write('\twrite(s_a_line,string'); target.write("'("); target.write('";"));\n');
+    target.write("\twait for clock_period;\n");
+    target.write('\tsignal_release("/%s/uut/%s", 0);\n' % (entityname, signal));            
+    target.write('\tsignal_force("/%s/uut/%s", "0", open, freeze, open, 0);\n' % (entityname, signal));             
+    target.write("\tBIST_start_in <= '1';\n");
+    target.write("\twait for clock_period;\n");
+    target.write("\tBIST_start_in <= '0';\n");
+    target.write("\twait until BIST_Done_out = '1';\n");
+    target.write("\twait for 0.2*clock_period;\n");    
+    target.write("\twrite(s_a_line, NOT BIST_result_out);\n");
+    target.write("\twait for clock_period;\n");
+    target.write('\tsignal_release("/%s_fc_tb/uut/%s", 0);\n' % (entityname, signal) );       
+    #target.write('report(strcat(strcat("%s;",To_String(sa1_result,"%%s;")),To_String(sa0_result,"%%s")));\n' % signal);
+    #print('--------------------------------------------------------------------------------');
+    target.write("\twriteline(out_file, s_a_line);\n");
+   target.write('\n\treport "Testing fault coverage DONE!" severity note;\n') 
+   target.write('\twait for 50*clock_period;\n') 
+   target.write('\tstop_the_clock <= true;\n') 
+   target.write('\twait;\n') 
+   target.write('end process;\n\n')
+   
+   target.write('clocking: process\n')
+   target.write('begin\n')
+   target.write('\twhile not stop_the_clock loop\n')
+   target.write('\t\tclk <= \'0\', \'1\' after clock_period / 2;\n')
+   target.write('\t\twait for clock_period;\n')
+   target.write('\t\tend loop;\n')
+   target.write('\twait;\n')
+   target.write('end process;\n')
+
    target.write('\nend architecture;')
-
    target.close()
 
 if __name__ == "__main__":

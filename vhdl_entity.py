@@ -27,19 +27,37 @@ class vhdl_component:
     if len(self.generics) != 0:
       rts += '\t\tgeneric (\n'
       for i in range(0,len(self.generics)-1):
-        rts += '\t\t\t%s : %s : %s;\n' % (self.generics[i].name, self.generics[i].type, self.generics[i].std_value)
-      rts += '\t\t\t%s : %s : %s\n\t\t);' % (self.generics[-1].name, self.generics[-1].type, self.generics[-1].std_value)
+        rts += '\t\t\t%s : %s := %s;\n' % (self.generics[i].name, self.generics[i].type, self.generics[i].std_value)
+      rts += '\t\t\t%s : %s := %s\n\t\t);' % (self.generics[-1].name, self.generics[-1].type, self.generics[-1].std_value)
     if not(len(self.inputs) == 0 or len(self.outputs) == 0):
       rts += '\n\t\tport (\n'
     if len(self.inputs) != 0:      
       for i in range(0,len(self.inputs)):
-        rts += '\t\t\t%s : %s : %s;\n' % (self.inputs[i].name, self.inputs[i].direction, self.inputs[i].type)
+        rts += '\t\t\t%s : %s %s;\n' % (self.inputs[i].name, self.inputs[i].direction, self.inputs[i].type)
     if len(self.outputs) != 0:      
-      for i in range(0,len(self.inputs)-2):
-        rts += '\t\t\t%s : %s : %s;\n' % (self.outputs[i].name, self.outputs[i].direction, self.outputs[i].type)
-      rts += '\t\t\t%s : %s : %s\n\t\t);' % (self.outputs[-1].name, self.outputs[-1].direction, self.outputs[-1].type)
+      for i in range(0,len(self.outputs)-2):
+        rts += '\t\t\t%s : %s %s;\n' % (self.outputs[i].name, self.outputs[i].direction, self.outputs[i].type)
+      rts += '\t\t\t%s : %s %s\n\t\t);' % (self.outputs[-1].name, self.outputs[-1].direction, self.outputs[-1].type)
     rts += '\n\tend component;\n'  
     return rts
+
+  def writeComponentMap(self):
+   rts = '\tuut: %s\n' % self.name
+   rts += '\t\tgeneric map (\n'
+   for i in range(0,len(self.generics)-1):
+        rts += '\t\t\t%s => %s,\n' % (self.generics[i].name, self.generics[i].std_value)
+   rts += '\t\t\t%s => %s\n\t\t)' % (self.generics[-1].name, self.generics[-1].std_value)
+   if not(len(self.inputs) == 0 or len(self.outputs) == 0):
+      rts += '\n\t\tport map(\n'
+      if len(self.inputs) != 0:      
+        for i in range(0,len(self.inputs)):
+          rts += '\t\t\t%s => %s,\n' % (self.inputs[i].name, self.inputs[i].name)
+      if len(self.outputs) != 0:      
+        for i in range(0,len(self.outputs)-2):
+          rts += '\t\t\t%s => %s,\n' % (self.outputs[i].name, self.outputs[i].name)
+        rts += '\t\t\t%s => %s\n\t\t);' % (self.outputs[-1].name, self.outputs[-1].name)
+   return rts
+
 
 class vhdl_entity:
    
