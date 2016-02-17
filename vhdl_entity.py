@@ -35,7 +35,7 @@ class vhdl_component:
       for i in range(0,len(self.inputs)):
         rts += '\t\t\t%s : %s %s;\n' % (self.inputs[i].name, self.inputs[i].direction, self.inputs[i].type)
     if len(self.outputs) != 0:      
-      for i in range(0,len(self.outputs)-2):
+      for i in range(0,len(self.outputs)-1):
         rts += '\t\t\t%s : %s %s;\n' % (self.outputs[i].name, self.outputs[i].direction, self.outputs[i].type)
       rts += '\t\t\t%s : %s %s\n\t\t);' % (self.outputs[-1].name, self.outputs[-1].direction, self.outputs[-1].type)
     rts += '\n\tend component;\n'  
@@ -53,7 +53,7 @@ class vhdl_component:
         for i in range(0,len(self.inputs)):
           rts += '\t\t\t%s => %s,\n' % (self.inputs[i].name, self.inputs[i].name)
       if len(self.outputs) != 0:      
-        for i in range(0,len(self.outputs)-2):
+        for i in range(0,len(self.outputs)-1):
           rts += '\t\t\t%s => %s,\n' % (self.outputs[i].name, self.outputs[i].name)
         rts += '\t\t\t%s => %s\n\t\t);' % (self.outputs[-1].name, self.outputs[-1].name)
    return rts

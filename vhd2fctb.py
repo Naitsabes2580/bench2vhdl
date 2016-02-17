@@ -205,7 +205,7 @@ def main(argv):
    target.write('\tvariable s_a_line : line;\n')
    target.write('begin\n')
    for i in range(0,len(l_entity_inputs)):
-    if l_entity_inputs[i].name != 'reset':
+    if l_entity_inputs[i].name != 'reset' and l_entity_inputs[i].name != 'clk':
       target.write('\t%s\t<= \'0\';\n' % l_entity_inputs[i].name)
    target.write('\treset\t<= \'1\';\n')
    target.write('\twait for 10*clock_period;\n')
@@ -223,7 +223,7 @@ def main(argv):
    target.write('\t\treport "Testing a successfull BIST execution failed" severity failure;\n')
    target.write('\tend if;\n\n')
 
-   target.write('\t-- Testing the fault coverage\n')
+   target.write('\twait for 10*clock_period;\n\t-- Testing the fault coverage\n')
    for signal in l_signals:
     target.write('\t--------------------------------------------------------------------------------\n');
     target.write('\t-- Testing signal %s with stuck-at-1 and stuck-at-0\n' % signal);
@@ -237,8 +237,8 @@ def main(argv):
     target.write("\twrite(s_a_line, NOT BIST_result_out);\n");
     target.write('\twrite(s_a_line,string'); target.write("'("); target.write('";"));\n');
     target.write("\twait for clock_period;\n");
-    target.write('\tsignal_release("/%s/uut/%s", 0);\n' % (entityname, signal));            
-    target.write('\tsignal_force("/%s/uut/%s", "0", open, freeze, open, 0);\n' % (entityname, signal));             
+    target.write('\tsignal_release("/%s_fc_tb/uut/%s", 0);\n' % (entityname, signal));            
+    target.write('\tsignal_force("/%s_fc_tb/uut/%s", "0", open, freeze, open, 0);\n' % (entityname, signal));             
     target.write("\tBIST_start_in <= '1';\n");
     target.write("\twait for clock_period;\n");
     target.write("\tBIST_start_in <= '0';\n");
