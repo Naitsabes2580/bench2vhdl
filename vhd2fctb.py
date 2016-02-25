@@ -61,6 +61,7 @@ def main(argv):
   
 
    verbosity_level = '1'
+   log_signatures = True
 
    # Print some information for the user if verbose made has been activated
    if verbose == True: 
@@ -125,8 +126,11 @@ def main(argv):
    with open(inputfile) as in_file:
     for line in in_file:
       if line.startswith('entity') == True:
-        stripped_line = line.strip()
-        entityname = stripped_line[stripped_line.find('entity')+7:stripped_line.find('is')-1]
+        stripped_line = line.strip()                
+        p = re.compile(r'\bis\b')
+        for m in p.finditer(stripped_line):
+          a = (m.start(), m.group())
+        entityname = stripped_line[stripped_line.find('entity')+7:m.start()].strip()
         print 'entityname: %s' % entityname
       if line.startswith('library') or line.startswith('use') or line.startswith('LIBRARY') or line.startswith('USE'):
         l_libraries.append(line)
@@ -231,24 +235,30 @@ def main(argv):
     target.write('\tsignal_force("/%s_fc_tb/uut/%s", "1", open, freeze, open, 0);\n' % (entityname, signal));            
     target.write("\tBIST_start_in <= '1';\n");
     target.write("\twait for clock_period;\n");
-    target.write("\tBIST_start_in <= '0';\n");
+    target.write("\tBIST_start_in <= '0';\n");    
+    target.write("\twait until spy_ctrl_state = bist_eval;\n");
+    #target.write("\twrite(s_a_line,string'(\";\"));\n");
+    target.write("\twrite(s_a_line,to_bstring(spy_misr_signature));\n");
+    target.write("\twrite(s_a_line,string'(\";\"));\n");
     target.write("\twait until BIST_Done_out = '1';\n");
     target.write("\twait for 0.2*clock_period;\n");  
-    target.write("\twrite(s_a_line, NOT BIST_result_out);\n");
-    target.write('\twrite(s_a_line,string'); target.write("'("); target.write('";"));\n');
+    target.write("\twrite(s_a_line, NOT BIST_result_out);\n");    
+    target.write("\twrite(s_a_line,string'(\";\"));\n");
     target.write("\twait for clock_period;\n");
     target.write('\tsignal_release("/%s_fc_tb/uut/%s", 0);\n' % (entityname, signal));            
     target.write('\tsignal_force("/%s_fc_tb/uut/%s", "0", open, freeze, open, 0);\n' % (entityname, signal));             
     target.write("\tBIST_start_in <= '1';\n");
     target.write("\twait for clock_period;\n");
     target.write("\tBIST_start_in <= '0';\n");
+    target.write("\twait until spy_ctrl_state = bist_eval;\n");
+    #target.write("\twrite(s_a_line,string'(\";\"));\n");
+    target.write("\twrite(s_a_line,to_bstring(spy_misr_signature));\n");
+    target.write("\twrite(s_a_line,string'(\";\"));\n");    
     target.write("\twait until BIST_Done_out = '1';\n");
     target.write("\twait for 0.2*clock_period;\n");    
     target.write("\twrite(s_a_line, NOT BIST_result_out);\n");
     target.write("\twait for clock_period;\n");
-    target.write('\tsignal_release("/%s_fc_tb/uut/%s", 0);\n' % (entityname, signal) );       
-    #target.write('report(strcat(strcat("%s;",To_String(sa1_result,"%%s;")),To_String(sa0_result,"%%s")));\n' % signal);
-    #print('--------------------------------------------------------------------------------');
+    target.write('\tsignal_release("/%s_fc_tb/uut/%s", 0);\n' % (entityname, signal) );           
     target.write("\twriteline(out_file, s_a_line);\n");
    target.write('\n\treport "Testing fault coverage DONE!" severity note;\n') 
    target.write('\twait for 50*clock_period;\n') 
