@@ -34,3 +34,27 @@ class lis_ser_ff:
 \t\t\t);\n\n' % (self.number, self.CLOCK_PERIOD, self.clk, self.reset, self.D_in, \
             self.Hold_in, self.Rollback_in, self.Q_out, self.ERR_out)
      return rts
+
+class lis_shadow_cell_controller:
+  'Class for the lis_shadow_cell_controller'
+
+  def __init__(self, clk, reset, ERR_in, Hold_out, Rollback_out):
+    self.clk = clk
+    self.reset = reset
+    self.ERR_in = ERR_in
+    self.Hold_out = Hold_out
+    self.Rollback_out = Rollback_out
+
+  def writeSignalDeclarations(self):
+    rts = '\n\tsignal %s, %s, %s : std_logic;\n' % (self.ERR_in, self.Hold_out, self.Rollback_out)
+    return rts
+
+  def writePortMap(self):
+    rts = 'CTRL:\tlis_shadow_cell_controller\n'
+    rts += '\t\tport map( \n'
+    rts += '\t\t\tclk\t\t\t=>%s,\n' % self.clk
+    rts += '\t\t\treset\t\t=>%s,\n' % self.reset
+    rts += '\t\t\tERR_in\t\t=>%s,\n' % self.ERR_in
+    rts += '\t\t\tHold_out\t\t=>%s,\n' % self.Hold_out
+    rts += '\t\t\tRollback_out\t=>%s,\n' % self.Rollback_out
+    return rts

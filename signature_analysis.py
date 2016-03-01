@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 """signature_analysis.py: Analyzes the frequency of occurence of final circuit signatures"""
 
