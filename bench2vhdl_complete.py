@@ -18,6 +18,7 @@ import os.path
 # Import classes for lis_dff and lis_gates
 from dff import dff
 from lis_ser_ff import lis_ser_ff
+from lis_ser_bist_ff import lis_ser_bist_ff, lis_ser_bist_controller
 from lis_cbist_ff import lis_cbist_ff
 from lis_cbist_ff import lis_cbist_controller
 from lis_input_isol_sr import lis_input_isol_sr
@@ -128,6 +129,8 @@ def main(argv):
 
    if int(selected_ff_type) == 3:
     entityname += '_cbist'
+   elif int(selected_ff_type) == 4:
+    entityname += '_ser_bist'
 
    with open(inputfile) as f:
     for line in f:
@@ -154,8 +157,8 @@ def main(argv):
           l_connections.append(D_in.strip())
         Q_out = line[0:line.find('=')-1]
         if not(Q_out.strip() in l_connections): 
-          l_connections.append(Q_out.strip())
-        
+          l_connections.append(Q_out.strip())        
+
         if int(selected_ff_type) == 1:   # D flip-flop selected
           new_ff = dff(D_in, Q_out, 'clk', 'reset')          
           l_flip_flops.append(new_ff)                    
@@ -172,6 +175,20 @@ def main(argv):
             Q_in = l_flip_flops[lis_cbist_ff.count-1].Q_out                                
           new_lis_cbist_ff = lis_cbist_ff('clk', D_in, Q_in, 'ctrl_B0_out', 'ctrl_B1_out', Q_out)          
           l_flip_flops.append(new_lis_cbist_ff)
+
+        elif int(selected_ff_type) == 4:          
+          if lis_ser_bist_ff.count == 0:
+            Q_in = '--needs to be inserted manually!'  #this has to be connected to last ff of CBIST chain            
+            Scan_in = '--output of last input isolation SR ff'            
+          else:                           
+            Q_in = l_flip_flops[-1].Q_out
+            Scan_in = l_flip_flops[-1].Scan_out
+          new_lis_ser_bist_ff = lis_ser_bist_ff('clk', 'reset', D_in, Q_in, 'ctrl_B0_out', \
+            'ctrl_B1_out', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
+            'SER_BIST_FF_%s_ERR_out' % lis_ser_bist_ff.count, 'SER_BIST_FF_%s_Scan_out' % lis_ser_bist_ff.count, \
+            Q_out)
+          l_flip_flops.append(new_lis_ser_bist_ff)          
+
 
       elif 'NOT' in line:
         open_bracket = line.find('(')+1
@@ -291,7 +308,7 @@ def main(argv):
    f.close
 
    # Processing of input isolation muxes
-   if int(selected_ff_type) == 3:
+   if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
     for input_sig in l_inputs:      
        if lis_input_isol_sr.count == 0:
          chain_in = '--needs to be inserted manually!'  #this has to be connected to last ff of CBIST chain            
@@ -571,12 +588,16 @@ def main(argv):
     for i in range(0, len(misr.misr_ffs)):
       l_comparators.append(lis_comparator(misr.misr_ffs[i].Q_out, 'EXPECTED_RESPONSE(%s)' % str(len(misr.misr_ffs)-i-1), 'COMP_out(%s)' % str(len(misr.misr_ffs)-i-1)))
       #print lis_comparator.writePortMap(new_comp)
+   
    # Processing of controller circuits that might be needed
    if int(selected_ff_type) == 3:
     controller_circuit = lis_cbist_controller('BIST_LENGTH', 'clk', 'reset', 'COMP_tree_out', 'BIST_start_in', 'ctrl_B0_out', 'ctrl_B1_out', 'BIST_done_out', 'BIST_result_out' )
-    
-
-
+   
+   elif int(selected_ff_type) == 4:
+    controller_circuit = lis_ser_bist_controller('NUM_FF', 'BIST_LENGTH', 'clk', 'reset', 'OR_tree_out', \
+      'spc_par_ok_in', 'BIST_start_in', 'EXPECTED_RESPONSE', 'ctrl_Hold_out', 'ctrl_Rollback_out', \
+      'ctrl_par_hold_out', 'ctrl_par_reset_out', 'ctrl_BIST_eval_out', 'ctrl_B0_out', 'ctrl_B1_out', \
+      'BIST_done_out', 'BIST_result_out', 'ctrl_Scan_out')
 
 
    if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
@@ -595,7 +616,7 @@ def main(argv):
    target.write('------------------------------------------------------------------------\n')
    target.write('--#LIS#\n')
    target.write('--Author: Sebastian Kroesche\n')
-   target.write('--Date: %02d.%02d.%d \n' % (now.day, now.month, now.year) )
+   target.write('--Date: %02d.%02d.%d - %02d:%02d:%02d  \n' % (now.day, now.month, now.year, now.hour, now.minute, now.second) )
    target.write('--Description: Implementation of ISCAS89 %s circuit with\n' % entityname)
    target.write('--             %s \n' % ff_types[int(selected_ff_type)-1])#[4:-1])
    target.write('--             generated with bench2vhdl_complete\n')
@@ -616,6 +637,15 @@ def main(argv):
     #target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := ((%s downto 0) => \'0\');\n' % (str(len(l_comparators)-1)), str(len(l_comparators)-1))    
     target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := (%s downto 0 => \'0\')\n' % ( str(len(l_comparators)-1), str(len(l_comparators)-1) ) )
     target.write('\t);\n')
+   elif int(selected_ff_type) == 4:    
+    NUM_FF = (len(l_input_isol_muxes)+len(l_flip_flops)+len(l_outputs)-2)
+    target.write('\tgeneric (\n')
+    target.write('\t\tNUM_FF : integer := %d;\n' % NUM_FF)
+    target.write('\t\tBIST_LENGTH : integer := 5000;\n')    
+    target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := (%s downto 0 => \'0\')\n' \
+      % (str(NUM_FF-1), str(NUM_FF-1) ) )
+    target.write('\t);\n')
+
    target.write('\tport (\n')
    target.write('\t\tclk : in std_logic; \n')
    target.write('\t\treset : in std_logic; \n')
@@ -660,6 +690,13 @@ def main(argv):
     target.write('%s : std_logic;\n' % l_misr_signals[-1])
     target.write('\tsignal misr_signature : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(len(misr.misr_ffs)-1))
 
+   elif int(selected_ff_type) == 4:
+    target.write('\n\tsignal ')
+    for i in range(0, len(l_bist_signals)-1):
+      target.write('%s, ' % l_bist_signals[i])
+    target.write('%s : std_logic;\n' % l_bist_signals[-1])
+    target.write(lis_ser_bist_controller.writeSignalDeclaration(controller_circuit))
+   
    #Write begin of architecture
    target.write('\nbegin\n')   
     
@@ -684,17 +721,24 @@ def main(argv):
    elif int(selected_ff_type) == 3:
     target.write(lis_cbist_controller.writePortMap(controller_circuit))
 
+   elif int(selected_ff_type) == 4:
+    target.write(lis_ser_bist_controller.writePortMap(controller_circuit))
 
    # Write input isolation multiplexers (needed for CBIST FF and SER/BIST FF)
-   target.write('------- START INPUT ISOLATION MULTIPLEXERS --------\n')
-   if int(selected_ff_type) == 3:
-    target.write('\ninput_mux_sel_proc: process (ctrl_B0_out, ctrl_B1_out)\n')
+   if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
+    target.write('------- START INPUT ISOLATION MULTIPLEXERS --------\n')
+    if int(selected_ff_type) == 4:
+      target.write('\ninput_mux_sel_proc: process (reset, ctrl_B0_out, ctrl_B1_out)\n')
+    else:
+      target.write('\ninput_mux_sel_proc: process (ctrl_B0_out, ctrl_B1_out)\n')
     target.write('begin\n')
     target.write('\tinput_mux_sel <= NOT( ctrl_B0_out XOR ctrl_B1_out );\n')
+    if int(selected_ff_type) == 4:
+      target.write('\tmux_reset <= reset OR ( ctrl_B0_out NOR ctrl_B1_out );\n')
     target.write('end process;\n\n')
     for element in l_input_isol_muxes:
       target.write(lis_input_isol_sr.writePortMap(element))
-   target.write('------- END INPUT ISOLATION MULTIPLEXERS --------\n')
+    target.write('------- END INPUT ISOLATION MULTIPLEXERS --------\n')
 
    #Write flip-flops
    target.write('\n--Flip-flops (total number: %d)\n' % len(l_flip_flops))
@@ -710,7 +754,11 @@ def main(argv):
     #CBIST flip-flop selected
     elif int(selected_ff_type) == 3:
       target.write(lis_cbist_ff.writePortMap(l_flip_flops[i]))
-    
+
+    #SER/BIST flip-flop selected
+    elif int(selected_ff_type) == 4:
+      target.write(lis_ser_bist_ff.writePortMap(l_flip_flops[i]))
+      
    if int(selected_ff_type) == 3:
     #Write MISR
     target.write('------------------------------------------------------------------------\n')
@@ -796,7 +844,8 @@ def main(argv):
    ###############################################################
    if int(selected_ff_type) > 2: 
      # Open outputfile in write mode
-     faultfile = '%s.fdf' % entityname
+     
+     faultfile = os.path.dirname(outputfile) + '/%s.fdf' % entityname
      target = open(faultfile, 'w')
      
      # Write header with author information and statistics
@@ -804,13 +853,13 @@ def main(argv):
      target.write('# Created by bench2vhdl_complete on %d-%02d-%02d\n' % (now.year, now.month, now.day) )
      #target.write('# signal_name;s-a-1 det;s-a-0 det\n')
      for signal in l_inputs:      
-      if int(selected_ff_type) == 3:        
+      if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:        
         if signal != 'BIST_start_in':
           target.write('%s_muxed\n' % signal)              
       else: 
           target.write('%s\n' % signal)  
      for signal in l_outputs:
-      if int(selected_ff_type) == 3:        
+      if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:        
         if not signal in ['BIST_result_out', 'BIST_done_out']:
           target.write('%s_temp\n' % signal)              
       else: 

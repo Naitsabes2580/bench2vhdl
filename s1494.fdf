@@ -1,6 +1,5 @@
 # Stuck-at-fault description file for circuit s1494
 # Created by bench2vhdl_complete on 2016-03-01
-signal_name;s-a-1 det;s-a-0 det
 CLR
 v6
 v5
@@ -31,7 +30,6 @@ v13_D_7
 v13_D_6
 BIST_done_out
 BIST_result_out
-#;#;#
 v13_D_5C
 v12
 v13_D_4C
