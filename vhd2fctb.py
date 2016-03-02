@@ -195,7 +195,7 @@ def main(argv):
    target.write('\tsignal stop_the_clock: boolean;\n')
    target.write('\ttype t_fsm_state is( idle, ser_detect, ser_correct, bist_init, bist_seq_start, bist_sig_scan_completed, bist_eval, check_parity, bist_end );\n\n')
    target.write('\tsignal spy_ctrl_state : t_fsm_state;\n')
-   target.write('\tfile out_file: text open write_mode is "test_out.fcf";\n')
+   target.write('\tfile out_file: text open write_mode is "test_out_%s.fcf";\n' % entityname)
 
    target.write('\nbegin\n\n')
    

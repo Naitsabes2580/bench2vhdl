@@ -19,9 +19,11 @@ import os.path
 from dff import dff
 from lis_ser_ff import lis_ser_ff
 from lis_ser_bist_ff import lis_ser_bist_ff, lis_ser_bist_controller
+from lis_po_dff import lis_po_dff
 from lis_cbist_ff import lis_cbist_ff
 from lis_cbist_ff import lis_cbist_controller
-from lis_input_isol_sr import lis_input_isol_sr
+from lis_input_isol_sr import lis_input_isol_sr, lis_ser_bist_input_isol_sr
+from lis_spc_even import lis_spc_even
 from lis_not import lis_not
 from and2 import and2
 from lis_and3 import lis_and3
@@ -47,14 +49,16 @@ def main(argv):
    outputfile = ''
    verbose = False
    clk_period = '10 ns'
+   selected_ff_type = '1'
+   ff_type_preselected = False
    try:
-      opts, args = getopt.getopt(argv,"hvi:o:f:",["ifile=","ofile="])
+      opts, args = getopt.getopt(argv,"hvi:o:t:",["ifile=","ofile=","fftype="])
    except getopt.GetoptError:
-      print 'usage: bench2vhdl_complete.py -i <inputfile> -o <outputfile>'
+      print 'usage: bench2vhdl_complete.py -i <inputfile> -o <outputfile> -t <flip-flop-type>'
       sys.exit(2)
    for opt, arg in opts:
       if opt == '-h':
-         print 'usage: bench2vhdl_complete.py -i <inputfile> -o <outputfile>'
+         print 'usage: bench2vhdl_complete.py -i <inputfile> -o <outputfile> -t <flip-flop-type>'
          sys.exit()
       elif opt in ("-v", "--verbose"):
           verbose = True
@@ -62,13 +66,19 @@ def main(argv):
          inputfile = arg
       elif opt in ("-o", "--ofile"):
          outputfile = arg      
-   
+      elif opt in ("-t", "--fftype"):
+        if int(arg) >= 1 and int(arg) <= 4:
+          selected_ff_type = str(arg)
+          ff_type_preselected = True
+
 
    # Initialize lists for inputs, outputs, FFs and gates
    l_statistics = []
    l_inputs = []
    l_outputs = []
    l_flip_flops = []
+   l_po_dffs = []
+   l_po_signals = []
    l_inverters = []
    l_and_gates = []
    l_nand_gates = []
@@ -108,14 +118,15 @@ def main(argv):
    print 'Output file is: %s\n' % outputfile
 
    # Ask user which flip-flops to use
-   print 'The following types of flip-flops can be selected:'
-   for entry in ff_types:
-    print entry  
-   selected_ff_type = raw_input('Please specify number of the flip-flops to use: ')
-   while not(selected_ff_type.isdigit() and int(selected_ff_type) >= 1 and int(selected_ff_type) <= 4):
-    print 'Invalid option selected. Try again!'    
-    selected_ff_type = raw_input('Please specify number of the flip-flops to use: ')   
-   print 'Option \"%s\" selected\n' % ff_types[int(selected_ff_type)-1]
+   if ff_type_preselected == False:
+    print 'The following types of flip-flops can be selected:'
+    for entry in ff_types:
+     print entry  
+    selected_ff_type = raw_input('Please specify number of the flip-flops to use: ')
+    while not(selected_ff_type.isdigit() and int(selected_ff_type) >= 1 and int(selected_ff_type) <= 4):
+     print 'Invalid option selected. Try again!'    
+     selected_ff_type = raw_input('Please specify number of the flip-flops to use: ')   
+    print 'Option \"%s\" selected\n' % ff_types[int(selected_ff_type)-1]
    
     
 
@@ -308,7 +319,7 @@ def main(argv):
    f.close
 
    # Processing of input isolation muxes
-   if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
+   if int(selected_ff_type) == 3:
     for input_sig in l_inputs:      
        if lis_input_isol_sr.count == 0:
          chain_in = '--needs to be inserted manually!'  #this has to be connected to last ff of CBIST chain            
@@ -323,6 +334,30 @@ def main(argv):
     l_bist_signals.append('mux_reset')
     l_flip_flops[0].Q_in = l_input_isol_muxes[-1].chain_out   
 
+   if int(selected_ff_type) == 4:
+    for input_sig in l_inputs:      
+       if lis_ser_bist_input_isol_sr.count == 0:
+         chain_in = '--needs to be inserted manually!'  #this has to be connected to last ff of CBIST chain            
+         scan_in = 'ctrl_Scan_out'
+       else:   
+         chain_in = l_input_isol_muxes[lis_ser_bist_input_isol_sr.count-1].chain_out                                
+         scan_in = l_input_isol_muxes[-1].Scan_out
+       err_out = 'MUX_%s_ERR_out' % input_sig
+       scan_out = 'MUX_%s_Scan_out' % input_sig
+       chain_out = 'MUX_%s_chain_out' % input_sig
+       mux_out = '%s_muxed' % input_sig
+       new_lis_ser_bist_input_isol_sr = lis_ser_bist_input_isol_sr('clk', \
+        'mux_reset', input_sig, chain_in, 'input_mux_sel', 'ctrl_B1_out', \
+        scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out', \
+        err_out, scan_out, mux_out, chain_out)
+       l_input_isol_muxes.append(new_lis_ser_bist_input_isol_sr)        
+       l_bist_signals.append(chain_out)
+       l_bist_signals.append(mux_out)
+    l_bist_signals.append('mux_reset')
+    l_flip_flops[0].Q_in = l_input_isol_muxes[-1].chain_out   
+    l_flip_flops[0].Scan_in = l_input_isol_muxes[-1].Scan_out
+
+   if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
     for inv in l_inverters:
       if inv.A in l_inputs:
         inv.A += '_muxed'
@@ -440,9 +475,11 @@ def main(argv):
           gate.D += '_muxed'
         if gate.Z in l_inputs:
           gate.Z += '_muxed'
-      
-
-   # Creation of MISR
+   
+   #####################################
+   ##   Handling of PRIMARY OUTPUTS   ##
+   #####################################
+   # For CBIST circuits: Creation of MISR
    if int(selected_ff_type) == 3:
     l_misr_signals = ['misr_reset', 'misr_feedback_path', 'PO_DFF_CBIST_out']
     misr = lis_misr(len(l_outputs) + 1)   
@@ -460,7 +497,29 @@ def main(argv):
        l_misr_signals.append('PO_DFF_%s_out' % l_outputs.index(i))
        l_misr_signals.append(l_outputs[l_outputs.index(i)] + '_temp')
     l_input_isol_muxes[0].chain_in = misr.misr_ffs[-1].Q_out
+   
+   if int(selected_ff_type) == 4:
+    for i in range(0, len(l_outputs)):
+      D_in = l_outputs[i] + '_temp'      
+      l_po_signals.append(D_in)
+      if len(l_po_dffs) == 0:
+        Q_in = l_flip_flops[-1].Q_out
+        Scan_in = l_flip_flops[-1].Scan_out
+        Q_out = 'PO_DFF_0_out'    
+      else:                           
+        Q_out = 'PO_DFF_%s_out' % str(len(l_po_dffs))
+        Q_in = l_po_dffs[-1].Q_out
+        Scan_in = l_po_dffs[-1].Scan_out
+      new_po_ff = lis_po_dff('clk', 'reset', D_in, Q_in, 'ctrl_B0_out', \
+            'ctrl_B1_out', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
+            'PO_DFF_%s_ERR_out' % str(len(l_po_dffs)), 'PO_DFF_%s_Scan_out' % str(len(l_po_dffs)), \
+            Q_out)     
+      l_po_dffs.append(new_po_ff)         
+      l_po_signals.append(Q_out)
+    l_input_isol_muxes[0].chain_in = l_po_dffs[-1].Q_out
 
+   # Adaption to modified driving of circuit outputs for CBIST & SER/BIST
+   if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
     for inv in l_inverters:
       if inv.A in l_outputs:
         inv.A += '_temp'
@@ -595,15 +654,20 @@ def main(argv):
    
    elif int(selected_ff_type) == 4:
     controller_circuit = lis_ser_bist_controller('NUM_FF', 'BIST_LENGTH', 'clk', 'reset', 'OR_tree_out', \
-      'spc_par_ok_in', 'BIST_start_in', 'EXPECTED_RESPONSE', 'ctrl_Hold_out', 'ctrl_Rollback_out', \
+      'spc_par_ok_out', 'BIST_start_in', 'EXPECTED_RESPONSE', 'ctrl_Hold_out', 'ctrl_Rollback_out', \
       'ctrl_par_hold_out', 'ctrl_par_reset_out', 'ctrl_BIST_eval_out', 'ctrl_B0_out', 'ctrl_B1_out', \
       'BIST_done_out', 'BIST_result_out', 'ctrl_Scan_out')
 
+   # Generation of parity checker, in case that ser_bist_ff has been selected:
+   if int(selected_ff_type) == 4:
+    parity_checker = lis_spc_even('clk', controller_circuit.par_reset_out, controller_circuit.Scan_out, l_po_dffs[-1].Scan_out, controller_circuit.par_hold_out, 'spc_par_ok_out')
 
    if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
     l_inputs.append('BIST_start_in')
     l_outputs.append('BIST_done_out')
     l_outputs.append('BIST_result_out')
+
+
    ###############################################################
    #          CREATE VHDL DESCRIPTION OF THE CIRCUIT             #    
    ###############################################################
@@ -695,7 +759,14 @@ def main(argv):
     for i in range(0, len(l_bist_signals)-1):
       target.write('%s, ' % l_bist_signals[i])
     target.write('%s : std_logic;\n' % l_bist_signals[-1])
+    target.write('\n\tsignal ')
+    for i in range(0, len(l_po_signals)-1):
+      target.write('%s, ' % l_po_signals[i])
+    target.write('%s : std_logic;\n' % l_po_signals[-1])
     target.write(lis_ser_bist_controller.writeSignalDeclaration(controller_circuit))
+    #Generate circuit signature
+    #dim_circ_sig = len(l_input_isol_muxes) + len(l_flip_flops) + len(l_po_dffs)
+    #target.write('signal circuit_signature : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(dim_circ_sig-1))
    
    #Write begin of architecture
    target.write('\nbegin\n')   
@@ -722,11 +793,32 @@ def main(argv):
     target.write(lis_cbist_controller.writePortMap(controller_circuit))
 
    elif int(selected_ff_type) == 4:
+    #target.write()
+    # target.write('\ncircuit_sig_proc: process(')
+    # for i in range(0, len(l_input_isol_muxes)):
+    #   target.write('%s, ' % l_input_isol_muxes[i].chain_out)
+    # for i in range(0, len(l_flip_flops)):
+    #   target.write('%s, ' % l_flip_flops[i].Q_out)
+    # for i in range(0, len(l_po_dffs)-1):
+    #   target.write('%s, ' % l_po_dffs[i].Q_out)
+    # target.write('%s)\n' % l_po_dffs[-1].Q_out)
+    # target.write('begin\n')
+    # target.write('circuit_signature <= ')
+    # for i in range(0, len(l_input_isol_muxes)):
+    #   target.write('%s & ' % l_input_isol_muxes[i].chain_out)
+    # for i in range(0, len(l_flip_flops)):
+    #   target.write('%s & ' % l_flip_flops[i].Q_out)
+    # for i in range(0, len(l_po_dffs)-1):
+    #   target.write('%s & ' % l_po_dffs[i].Q_out)
+    # target.write('%s;' % l_po_dffs[-1].Q_out)
+    # target.write('end process;\n\n')
     target.write(lis_ser_bist_controller.writePortMap(controller_circuit))
 
    # Write input isolation multiplexers (needed for CBIST FF and SER/BIST FF)
    if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
-    target.write('------- START INPUT ISOLATION MULTIPLEXERS --------\n')
+    target.write('--------------------------------------------------------------------------------\n')
+    target.write('--                    START INPUT ISOLATION MUXES                             --\n')
+    target.write('--------------------------------------------------------------------------------\n')
     if int(selected_ff_type) == 4:
       target.write('\ninput_mux_sel_proc: process (reset, ctrl_B0_out, ctrl_B1_out)\n')
     else:
@@ -737,8 +829,13 @@ def main(argv):
       target.write('\tmux_reset <= reset OR ( ctrl_B0_out NOR ctrl_B1_out );\n')
     target.write('end process;\n\n')
     for element in l_input_isol_muxes:
-      target.write(lis_input_isol_sr.writePortMap(element))
-    target.write('------- END INPUT ISOLATION MULTIPLEXERS --------\n')
+      if int(selected_ff_type) == 3:
+        target.write(lis_input_isol_sr.writePortMap(element))
+      elif int(selected_ff_type) == 4:
+        target.write(lis_ser_bist_input_isol_sr.writePortMap(element))
+    target.write('--------------------------------------------------------------------------------\n')
+    target.write('--                      END INPUT ISOLATION MUXES                             --\n')
+    target.write('--------------------------------------------------------------------------------\n')
 
    #Write flip-flops
    target.write('\n--Flip-flops (total number: %d)\n' % len(l_flip_flops))
@@ -791,6 +888,56 @@ def main(argv):
     for comp in l_comparators:
       target.write(lis_comparator.writePortMap(comp))
     target.write("\nCOMP_tree_out <= \'0\' when (COMP_out = (%s downto 0 => '0')) else \'1\';\n" % str(len(l_comparators)-1))
+
+   elif int(selected_ff_type) == 4:
+    target.write('------------------------------------------------------------------------\n')
+    target.write('--                 START PRIMARY OUTPUT HANDLING                      --\n')
+    target.write('------------------------------------------------------------------------\n')
+    #print l_po_dffs
+    lis_ser_bist_ff.count = 0
+    for po_dff in l_po_dffs:
+      target.write(lis_po_dff.writePortMap(po_dff))
+    target.write('\noutput_temp_proc: process(')
+    sensitivity_list = ''
+    for i in range (0,len(l_outputs)-1):
+      if l_outputs[i] not in ['BIST_done_out', 'BIST_result_out']:
+        #target.write('%s_temp, ' % i)        
+        sensitivity_list += '%s_temp, ' % l_outputs[i]
+    sensitivity_list = sensitivity_list[0:-2] + ')\n'
+    target.write(sensitivity_list)    
+    target.write('begin\n')
+    for i in range(1, len(l_outputs)-1):
+      if l_outputs[i] not in ['BIST_done_out', 'BIST_result_out']:
+        target.write('\t%s <= %s;\n' % (l_outputs[i], l_outputs[i] + '_temp'))
+    #target.write('\t%s <= %s;\n' % (misr.misr_ffs[-1].CUT_in[0:-5], misr.misr_ffs[-1].CUT_in))
+    target.write('end process;\n')
+    target.write('------------------------------------------------------------------------\n')
+    target.write('--                  END PRIMARY OUTPUT HANDLING                       --\n')
+    target.write('------------------------------------------------------------------------\n\n')
+    target.write('------------------------------------------------------------------------\n')
+    target.write('--            START PARITY CHECKING OF EXPECTED RESPONSE              --\n')
+    target.write('------------------------------------------------------------------------')
+    target.write(lis_spc_even.writePortMap(parity_checker))
+    target.write('------------------------------------------------------------------------\n')
+    target.write('--             END PARITY CHECKING OF EXPECTED RESPONSE               --\n')
+    target.write('------------------------------------------------------------------------\n')
+    target.write('------------------------------------------------------------------------\n')
+    target.write('--                          START OR-TREE                             --\n')
+    target.write('------------------------------------------------------------------------\n')
+    #Write OR-tree and shadow cell controller
+    #OR_tree_string = 'OR_tree_out <= ' + l_flip_flops[0].ERR_out + ' OR '
+    OR_tree_string = 'OR_tree_out <= ' + l_input_isol_muxes[0].ERR_out + ' OR '
+    for i in range(1, len(l_input_isol_muxes)):
+      OR_tree_string += l_input_isol_muxes[i].ERR_out + ' OR '
+    for i in range(0, len(l_flip_flops)):
+      OR_tree_string += l_flip_flops[i].ERR_out + ' OR '
+    for i in range(0, len(l_po_dffs)-1):
+      OR_tree_string += l_po_dffs[i].ERR_out + ' OR '
+    OR_tree_string += '%s;\n' % l_po_dffs[-1].ERR_out    
+    target.write(OR_tree_string)
+    target.write('------------------------------------------------------------------------\n')
+    target.write('--                           END OR-TREE                              --\n')
+    target.write('------------------------------------------------------------------------\n')
 
    target.write('\n--Inverters (total number: %d)\n'% len(l_inverters))
    #Write inverters
