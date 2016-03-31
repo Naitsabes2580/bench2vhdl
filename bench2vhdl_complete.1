@@ -1,0 +1,36 @@
+.\" Manpage for bench2vhdl_complete
+.TH man 1 "02 Mar 2016" "version 1.0" "bench2vhdl_complete man page"
+.SH NAME
+bench2vhdl_complete \- creates VHDL implementations of ISCAS 89 circuits
+.SH SYNOPSIS
+bench2vhdl_complete.py -i <inputfile> -o <outputfile> -t <flip-flop-type>
+.SH DESCRIPTION
+bench2vhdl_complete is a python script that creates a VHDL implementations out of the netlist description of ISCAS 89 circuits
+.SH OPTIONS
+.TP
+.BR \-i ", " \-\-ifile =
+inputfile with the netlist description of a ISCAS89 circuit
+.TP
+.BR \-o ", " \-\-ofile =
+the outputfile with the VHDL implementation of the selected circuit
+.TP
+.BR \-t ", " \-\-fftype =
+the type of flip-flop to be used for the implementation
+.TP
+.BR
+(1) Conventional D-type positive edge triggered flip-flop
+.TP
+.BR
+(2) Soft Error Resilient Flip-Flop with Shadow Cell
+.TP
+.BR
+(3) Circular BIST flip-flop for executing Circular BIST
+.TP
+.BR
+(4) SER/BIST flip-flop (basically combination of (2) and (3))
+.SH SEE ALSO
+-
+.SH BUGS
+No known bugs.
+.SH AUTHOR
+Sebastian Kroesche (sebastian.kroesche@mytum.de)	

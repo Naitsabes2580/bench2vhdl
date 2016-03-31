@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
 
 """bench2vhdl_complete.py: converts ISCAS89 bench format to VHDL"""
 
