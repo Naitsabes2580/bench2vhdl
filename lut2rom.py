@@ -74,17 +74,17 @@ def main(argv):
       # Skip comment lines
       if not line.startswith('#') == True: 
         splitted_line = line.split(';')
-        print "%s:%s" % (splitted_line[0], splitted_line[1])
-        l_patterns.append(splitted_line[0].strip())
-        l_responses.append(splitted_line[1].strip())
+        print "%s:%s" % (splitted_line[3], splitted_line[4])
+        l_patterns.append(splitted_line[3].strip())
+        l_responses.append(splitted_line[4].strip())
     f.close
 
    ###############################################################
    #                      CREATE COE FILES                       #    
    ###############################################################
    # Open outputfile in write mode
-  patternfile = os.path.dirname(inputfile) + '/' + prefix + '_pattern_rom_content.coe'
-  responsefile = os.path.dirname(inputfile) + '/' + prefix + '_response_rom_content.coe'
+  patternfile = os.path.dirname(inputfile)  + prefix + '_pattern_rom_content.coe'
+  responsefile = os.path.dirname(inputfile)  + prefix + '_response_rom_content.coe'
   print patternfile
 
   pattern_target = open(patternfile, 'w')
