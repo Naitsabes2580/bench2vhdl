@@ -43,6 +43,7 @@ from lis_misr import lis_misr2_ff
 from lis_misr import lis_misr3_ff
 from lis_comparator import lis_comparator
 
+from circuit_ser_bist_memory import circuit_ser_bist_memory
 
 def main(argv):
    inputfile = ''
@@ -195,7 +196,7 @@ def main(argv):
             Q_in = l_flip_flops[-1].Q_out
             Scan_in = l_flip_flops[-1].Scan_out
           new_lis_ser_bist_ff = lis_ser_bist_ff('clk', 'reset', D_in, Q_in, 'ctrl_B0_out', \
-            'ctrl_B1_out', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
+            'ctrl_B1_out', 'HFF_MUX_sel', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
             'SER_BIST_FF_%s_ERR_out' % lis_ser_bist_ff.count, 'SER_BIST_FF_%s_Scan_out' % lis_ser_bist_ff.count, \
             Q_out)
           l_flip_flops.append(new_lis_ser_bist_ff)          
@@ -347,7 +348,7 @@ def main(argv):
        chain_out = 'MUX_%s_chain_out' % input_sig
        mux_out = '%s_muxed' % input_sig
        new_lis_ser_bist_input_isol_sr = lis_ser_bist_input_isol_sr('clk', \
-        'mux_reset', input_sig, chain_in, 'input_mux_sel', 'ctrl_B1_out', \
+        'mux_reset', input_sig, chain_in, 'input_mux_sel', 'HFF_MUX_sel', \
         scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out', \
         err_out, scan_out, mux_out, chain_out)
        l_input_isol_muxes.append(new_lis_ser_bist_input_isol_sr)        
@@ -510,8 +511,12 @@ def main(argv):
         Q_out = 'PO_DFF_%s_out' % str(len(l_po_dffs))
         Q_in = l_po_dffs[-1].Q_out
         Scan_in = l_po_dffs[-1].Scan_out
+      #new_po_ff = lis_po_dff('clk', 'reset', D_in, Q_in, 'ctrl_B0_out', \
+      #      'ctrl_B1_out', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
+      #      'PO_DFF_%s_ERR_out' % str(len(l_po_dffs)), 'PO_DFF_%s_Scan_out' % str(len(l_po_dffs)), \
+      #      Q_out)     
       new_po_ff = lis_po_dff('clk', 'reset', D_in, Q_in, 'ctrl_B0_out', \
-            'ctrl_B1_out', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
+            'ctrl_B1_out', 'HFF_MUX_sel', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
             'PO_DFF_%s_ERR_out' % str(len(l_po_dffs)), 'PO_DFF_%s_Scan_out' % str(len(l_po_dffs)), \
             Q_out)     
       l_po_dffs.append(new_po_ff)         
@@ -653,10 +658,11 @@ def main(argv):
     controller_circuit = lis_cbist_controller('BIST_LENGTH', 'clk', 'reset', 'COMP_tree_out', 'BIST_start_in', 'ctrl_B0_out', 'ctrl_B1_out', 'BIST_done_out', 'BIST_result_out' )
    
    elif int(selected_ff_type) == 4:
-    controller_circuit = lis_ser_bist_controller('NUM_FF', 'BIST_LENGTH', 'clk', 'reset', 'OR_tree_out', \
-      'spc_par_ok_out', 'BIST_start_in', 'EXPECTED_RESPONSE', 'ctrl_Hold_out', 'ctrl_Rollback_out', \
-      'ctrl_par_hold_out', 'ctrl_par_reset_out', 'ctrl_BIST_eval_out', 'ctrl_B0_out', 'ctrl_B1_out', \
-      'BIST_done_out', 'BIST_result_out', 'ctrl_Scan_out')
+    #controller_circuit = lis_ser_bist_controller('NUM_FF', 'BIST_LENGTH', 'clk', 'reset', 'OR_tree_out', \
+    #  'spc_par_ok_out', 'BIST_start_in', 'EXPECTED_RESPONSE', 'ctrl_Hold_out', 'ctrl_Rollback_out', \
+    #  'ctrl_par_hold_out', 'ctrl_par_reset_out', 'ctrl_BIST_eval_out', 'ctrl_B0_out', 'ctrl_B1_out', \
+    #  'BIST_done_out', 'BIST_result_out', 'ctrl_Scan_out')
+    controller_circuit = lis_ser_bist_controller('NUM_FF', 'BIST_LENGTH', 'TBA!', '"TBA!"', '"TBA!"', '"TBA!"', '"TBA!"', 'clk', 'reset', 'OR_tree_out', 'spc_par_ok_out', 'BIST_start_in', 'Capture_in', 'mem_pattern_out', 'mem_response_out', 'ctrl_read_address_out', 'ctrl_read_memory_out',       'ctrl_Hold_out',  'ctrl_par_hold_out', 'ctrl_par_reset_out', 'ctrl_Rollback_out', 'ctrl_BIST_eval_out', 'ctrl_B0_out', 'ctrl_B1_out', 'ctrl_Capture_out', 'BIST_done_out', 'BIST_result_out', 'ctrl_err_code_out', 'ctrl_Scan_out', 'ctrl_AFF_scan_out')
 
    # Generation of parity checker, in case that ser_bist_ff has been selected:
    if int(selected_ff_type) == 4:
@@ -666,6 +672,10 @@ def main(argv):
     l_inputs.append('BIST_start_in')
     l_outputs.append('BIST_done_out')
     l_outputs.append('BIST_result_out')
+
+   #Pattern/Response Memory for fftype 4
+   if int(selected_ff_type) == 4:
+    memory = circuit_ser_bist_memory(entityname + '_memory', 'clk', 'memory_serializer_reset', controller_circuit.read_memory, controller_circuit.address_out, 'mem_pattern_out', 'mem_response_out')
 
 
    ###############################################################
@@ -705,9 +715,9 @@ def main(argv):
     NUM_FF = (len(l_input_isol_muxes)+len(l_flip_flops)+len(l_outputs)-2)
     target.write('\tgeneric (\n')
     target.write('\t\tNUM_FF : integer := %d;\n' % NUM_FF)
-    target.write('\t\tBIST_LENGTH : integer := 5000;\n')    
-    target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := (%s downto 0 => \'0\')\n' \
-      % (str(NUM_FF-1), str(NUM_FF-1) ) )
+    target.write('\t\tBIST_LENGTH : integer := 5000\n')    
+    #target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := (%s downto 0 => \'0\')\n' \
+    #  % (str(NUM_FF-1), str(NUM_FF-1) ) )
     target.write('\t);\n')
 
    target.write('\tport (\n')
@@ -716,6 +726,10 @@ def main(argv):
    for input_port in l_inputs:
    		#target.write(input_port)
    		target.write('\t\t%s: in std_logic; \n' % input_port)
+   if int(selected_ff_type) == 4:
+    target.write('\t\tCapture_in : in std_logic;\n')
+    target.write('\t\tCapture_out : out std_logic;\n')
+    target.write('\t\terr_code : out std_logic_vector(TBA downto 0);\n')
    for i in range(0, len(l_outputs)-1):   		
    		target.write('\t\t%s: out std_logic; \n' % l_outputs[i])
    target.write('\t\t%s: out std_logic \n' % l_outputs[len(l_outputs)-1])
@@ -764,6 +778,8 @@ def main(argv):
       target.write('%s, ' % l_po_signals[i])
     target.write('%s : std_logic;\n' % l_po_signals[-1])
     target.write(lis_ser_bist_controller.writeSignalDeclaration(controller_circuit))
+    target.write('\n\tsignal memory_serializer_reset, mem_pattern_out, mem_response_out : std_ulogic := \'0\';\n')
+    target.write('\tsignal AFF_chain_input, AFF_chain_input_MUX_sel : std_ulogic := \'0\';')
     #Generate circuit signature
     #dim_circ_sig = len(l_input_isol_muxes) + len(l_flip_flops) + len(l_po_dffs)
     #target.write('signal circuit_signature : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(dim_circ_sig-1))
@@ -812,7 +828,11 @@ def main(argv):
     #   target.write('%s & ' % l_po_dffs[i].Q_out)
     # target.write('%s;' % l_po_dffs[-1].Q_out)
     # target.write('end process;\n\n')
+    target.write('\n\tmemory_serializer_reset <= reset OR BIST_start_in;\n\n')
+    target.write(circuit_ser_bist_memory.writePortMap(memory))
     target.write(lis_ser_bist_controller.writePortMap(controller_circuit))
+    target.write('\n\t err_code\t\t<= %s;\n' % controller_circuit.err_code)
+    target.write('\t HFF_MUX_sel\t<= %s OR %s ;\n' % (controller_circuit.B1_out, controller_circuit.Capture_out))
 
    # Write input isolation multiplexers (needed for CBIST FF and SER/BIST FF)
    if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
@@ -828,6 +848,15 @@ def main(argv):
     if int(selected_ff_type) == 4:
       target.write('\tmux_reset <= reset OR ( ctrl_B0_out NOR ctrl_B1_out );\n')
     target.write('end process;\n\n')
+    if int(selected_ff_type) == 4:
+      target.write('AFF_chain_input_MUX: lis_mux\n')
+      target.write('port map (\n')
+      target.write('\tA_in\t=> %s,\n' % l_po_dffs[-1].Q_out)
+      target.write('\tB_in\t=> %s,\n' % controller_circuit.AFF_scan_out)
+      target.write('\tsel_in\t=> AFF_chain_input_MUX_sel,\n')
+      target.write('\tC_out\t=> AFF_chain_input\n')
+      target.write(');\n\n')
+      l_input_isol_muxes[0].chain_in = 'AFF_chain_input'
     for element in l_input_isol_muxes:
       if int(selected_ff_type) == 3:
         target.write(lis_input_isol_sr.writePortMap(element))
@@ -897,6 +926,8 @@ def main(argv):
     lis_ser_bist_ff.count = 0
     for po_dff in l_po_dffs:
       target.write(lis_po_dff.writePortMap(po_dff))
+
+    target.write('Capture_out\t <= %s;\n' % l_po_dffs[-1].Scan_out)
     target.write('\noutput_temp_proc: process(')
     sensitivity_list = ''
     for i in range (0,len(l_outputs)-1):
@@ -992,7 +1023,8 @@ def main(argv):
    if int(selected_ff_type) > 2: 
      # Open outputfile in write mode
      
-     faultfile = os.path.dirname(outputfile) + '/%s.fdf' % entityname
+     #faultfile = os.path.dirname(outputfile) + '/%s.fdf' % entityname
+     faultfile = os.path.dirname(outputfile) + '%s.fdf' % entityname
      target = open(faultfile, 'w')
      
      # Write header with author information and statistics

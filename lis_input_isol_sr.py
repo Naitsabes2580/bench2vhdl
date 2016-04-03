@@ -34,14 +34,14 @@ class lis_input_isol_sr:
 class lis_ser_bist_input_isol_sr:   
    count = 0
 
-   def __init__(self, clk, reset, PI_in, chain_in, sel_in, B1_in, Scan_in, \
+   def __init__(self, clk, reset, PI_in, chain_in, sel_in, HFF_MUX_sel, Scan_in, \
     Test_Done_in, Hold_in, Rollback_in, ERR_out, Scan_out, mux_out, chain_out):
       self.clk = clk
       self.reset = reset
       self.PI_in = PI_in
       self.chain_in = chain_in
       self.sel_in = sel_in
-      self.B1_in = B1_in
+      self.HFF_MUX_sel = HFF_MUX_sel
       self.Scan_in = Scan_in
       self.Test_Done_in = Test_Done_in
       self.Hold_in = Hold_in
@@ -64,7 +64,7 @@ class lis_ser_bist_input_isol_sr:
       rts += '\t\t\t\tPI_in\t\t\t=> %s,\n' % self.PI_in
       rts += '\t\t\t\tchain_in\t\t=> %s,\n' % self.chain_in 
       rts += '\t\t\t\tsel_in\t\t\t=> %s,\n' % self.sel_in 
-      rts += '\t\t\t\tB1_in\t\t\t=> %s,\n' % self.B1_in 
+      rts += '\t\t\t\tHFF_MUX_sel\t\t=> %s,\n' % self.HFF_MUX_sel 
       rts += '\t\t\t\tScan_in\t\t\t=> %s,\n' % self.Scan_in 
       rts += '\t\t\t\tTest_Done_in\t=> %s,\n' % self.Test_Done_in 
       rts += '\t\t\t\tHold_in\t\t\t=> %s,\n' % self.Hold_in 
