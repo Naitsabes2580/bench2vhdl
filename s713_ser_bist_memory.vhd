@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 --#LIS#
 --Author: Sebastian Kroesche
---Date: 03.04.2016 - 15:46:48  
+--Date: 04.04.2016 - 11:40:51  
 --Description: Pattern/Response ROM for s713_ser_bist circuit 
 --             generated with create_ser_bist_memory
 ------------------------------------------------------------------------
@@ -18,7 +18,7 @@ entity s713_ser_bist_memory is
 		clk				: in	std_logic;
 		reset			: in	std_logic;
 		start			: in	std_logic;
-		read_address	: in	std_logic_vector(6 downto 0);
+		read_address	: in	std_logic_vector(5 downto 0);
 		pattern_out		: out	std_logic;
 		response_out	: out	std_logic
 	);
@@ -29,7 +29,7 @@ architecture RTL of s713_ser_bist_memory is
 	component s713_ser_bist_pattern_rom
 	port (
 		clka	: in	std_logic;
-		addra	: in	std_logic_vector(6 downto 0);
+		addra	: in	std_logic_vector(5 downto 0);
 		douta	: in	std_logic_vector(76 downto 0);
 	);
 	end component;
@@ -37,7 +37,7 @@ architecture RTL of s713_ser_bist_memory is
 	component s713_ser_bist_response_rom
 	port (
 		clka	: in	std_logic;
-		addra	: in	std_logic_vector(6 downto 0);
+		addra	: in	std_logic_vector(5 downto 0);
 		douta	: in	std_logic_vector(76 downto 0);
 	);
 	end component;

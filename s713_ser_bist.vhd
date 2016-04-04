@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 --#LIS#
 --Author: Sebastian Kroesche
---Date: 03.04.2016 - 13:30:51  
+--Date: 04.04.2016 - 11:36:48  
 --Description: Implementation of ISCAS89 s713_ser_bist circuit with
 --             (4) Combined SER/BIST flip-flop (merges option 2 and 3) 
 --             generated with bench2vhdl_complete

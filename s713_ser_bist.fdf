@@ -1,5 +1,5 @@
 # Stuck-at-fault description file for circuit s713_ser_bist
-# Created by bench2vhdl_complete on 2016-04-03
+# Created by bench2vhdl_complete on 2016-04-04
 G1_muxed
 G2_muxed
 G3_muxed
