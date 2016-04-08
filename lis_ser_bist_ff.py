@@ -94,11 +94,12 @@ class lis_ser_bist_controller:
     Write the required signal declarations for the controller in the architecture definition part 
     """
     ctrl_signals = [self.ERR_in, self.parity_ok_in, self.read_memory, self.Hold_out, self.par_hold_out, self.par_reset_out, self.Rollback_out, 
-    self.BIST_eval_out, self.B0_out, self.B1_out, self.Capture_out, self.err_code, self.Scan_out, self.AFF_scan_out, 'HFF_mux_sel']
+    self.BIST_eval_out, self.B0_out, self.B1_out, self.Capture_out, self.Scan_out, self.AFF_scan_out, 'HFF_mux_sel']
     rts = '\n\tsignal ' #%s, %s, %s : std_logic;\n' % (self.ERR_in, self.B0_out, self.B1_out)
     for i in range(0, len(ctrl_signals)-1):
       rts += '%s, ' % ctrl_signals[i]
     rts += '%s : std_logic;\n' % ctrl_signals[-1]
+    rts += '\tsignal %s : std_logic_vector(2 downto 0); \n' % self.err_code
     rts += '\tsignal %s : std_logic_vector(TBA downto 0);\n' % self.address_out
     return rts
 

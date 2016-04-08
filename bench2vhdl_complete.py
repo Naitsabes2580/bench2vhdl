@@ -195,10 +195,15 @@ def main(argv):
           else:                           
             Q_in = l_flip_flops[-1].Q_out
             Scan_in = l_flip_flops[-1].Scan_out
+          err_out = 'SER_BIST_FF_%s_ERR_out' % lis_ser_bist_ff.count
+          scan_out = 'SER_BIST_FF_%s_Scan_out' % lis_ser_bist_ff.count
           new_lis_ser_bist_ff = lis_ser_bist_ff('clk', 'reset', D_in, Q_in, 'ctrl_B0_out', \
             'ctrl_B1_out', 'HFF_MUX_sel', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
-            'SER_BIST_FF_%s_ERR_out' % lis_ser_bist_ff.count, 'SER_BIST_FF_%s_Scan_out' % lis_ser_bist_ff.count, \
+            err_out , scan_out, \
             Q_out)
+          l_bist_signals.append(err_out)
+          l_bist_signals.append(scan_out)
+
           l_flip_flops.append(new_lis_ser_bist_ff)          
 
 
@@ -348,13 +353,16 @@ def main(argv):
        chain_out = 'MUX_%s_chain_out' % input_sig
        mux_out = '%s_muxed' % input_sig
        new_lis_ser_bist_input_isol_sr = lis_ser_bist_input_isol_sr('clk', \
-        'mux_reset', input_sig, chain_in, 'input_mux_sel', 'HFF_MUX_sel', \
+        'reset', input_sig, chain_in, 'input_mux_sel', 'HFF_MUX_sel', \
         scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out', \
         err_out, scan_out, mux_out, chain_out)
        l_input_isol_muxes.append(new_lis_ser_bist_input_isol_sr)        
        l_bist_signals.append(chain_out)
        l_bist_signals.append(mux_out)
-    l_bist_signals.append('mux_reset')
+       l_bist_signals.append(err_out)
+       l_bist_signals.append(scan_out)
+
+    
     l_flip_flops[0].Q_in = l_input_isol_muxes[-1].chain_out   
     l_flip_flops[0].Scan_in = l_input_isol_muxes[-1].Scan_out
 
@@ -514,13 +522,17 @@ def main(argv):
       #new_po_ff = lis_po_dff('clk', 'reset', D_in, Q_in, 'ctrl_B0_out', \
       #      'ctrl_B1_out', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
       #      'PO_DFF_%s_ERR_out' % str(len(l_po_dffs)), 'PO_DFF_%s_Scan_out' % str(len(l_po_dffs)), \
-      #      Q_out)     
+      #      Q_out) 
+      err_out = 'PO_DFF_%s_ERR_out' % str(len(l_po_dffs))    
+      scan_out = 'PO_DFF_%s_Scan_out' % str(len(l_po_dffs))
       new_po_ff = lis_po_dff('clk', 'reset', D_in, Q_in, 'ctrl_B0_out', \
             'ctrl_B1_out', 'HFF_MUX_sel', Scan_in, 'ctrl_BIST_eval_out', 'ctrl_Hold_out', 'ctrl_Rollback_out',\
-            'PO_DFF_%s_ERR_out' % str(len(l_po_dffs)), 'PO_DFF_%s_Scan_out' % str(len(l_po_dffs)), \
+            err_out, scan_out , \
             Q_out)     
       l_po_dffs.append(new_po_ff)         
       l_po_signals.append(Q_out)
+      l_po_signals.append(err_out)
+      l_po_signals.append(scan_out)
     l_input_isol_muxes[0].chain_in = l_po_dffs[-1].Q_out
 
    # Adaption to modified driving of circuit outputs for CBIST & SER/BIST
@@ -729,7 +741,7 @@ def main(argv):
    if int(selected_ff_type) == 4:
     target.write('\t\tCapture_in : in std_logic;\n')
     target.write('\t\tCapture_out : out std_logic;\n')
-    target.write('\t\terr_code : out std_logic_vector(TBA downto 0);\n')
+    target.write('\t\terr_code : out std_logic_vector(2 downto 0);\n')
    for i in range(0, len(l_outputs)-1):   		
    		target.write('\t\t%s: out std_logic; \n' % l_outputs[i])
    target.write('\t\t%s: out std_logic \n' % l_outputs[len(l_outputs)-1])
@@ -783,7 +795,8 @@ def main(argv):
     #Generate circuit signature
     #dim_circ_sig = len(l_input_isol_muxes) + len(l_flip_flops) + len(l_po_dffs)
     #target.write('signal circuit_signature : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(dim_circ_sig-1))
-   
+    target.write(circuit_ser_bist_memory.writeComponentDeclaration(memory))
+
    #Write begin of architecture
    target.write('\nbegin\n')   
     
@@ -840,13 +853,24 @@ def main(argv):
     target.write('--                    START INPUT ISOLATION MUXES                             --\n')
     target.write('--------------------------------------------------------------------------------\n')
     if int(selected_ff_type) == 4:
-      target.write('\ninput_mux_sel_proc: process (reset, ctrl_B0_out, ctrl_B1_out)\n')
+      target.write('\ninput_mux_sel_proc: process (reset, ctrl_B0_out, ctrl_B1_out, ctrl_err_code_out, ctrl_BIST_eval_out)\n')
     else:
       target.write('\ninput_mux_sel_proc: process (ctrl_B0_out, ctrl_B1_out)\n')
-    target.write('begin\n')
-    target.write('\tinput_mux_sel <= NOT( ctrl_B0_out XOR ctrl_B1_out );\n')
+    target.write('begin\n')    
     if int(selected_ff_type) == 4:
-      target.write('\tmux_reset <= reset OR ( ctrl_B0_out NOR ctrl_B1_out );\n')
+      #target.write('\tmux_reset <= reset OR ( ctrl_B0_out NOR ctrl_B1_out );\n')
+      target.write('\tif ctrl_B0_out = \'0\' and ctrl_B1_out = \'0\' then\n')
+      target.write('\t\tinput_mux_sel <= \'1\';\n')
+      target.write('\telsif ctrl_B0_out = \'1\' and ctrl_B1_out = \'1\' then\n')
+      target.write('\t\tinput_mux_sel <= \'1\';\n')
+      target.write('\telsif ctrl_B0_out = \'1\' and ctrl_B1_out = \'0\' and ctrl_err_code_out = "111" ) then\n'
+      target.write('\t\tinput_mux_sel <= \'1\';\n')
+      target.write('\telse\n')
+      target.write('\t\tinput_mux_sel <= \'0\';\n')
+      target.write('\tend if;\n')
+      target.write('\tAFF_chain_input_MUX_sel <= ctrl_B1_out AND (NOT ctrl_B0_out);\n')
+    else:
+      target.write('\tinput_mux_sel <= NOT( ctrl_B0_out XOR ctrl_B1_out );\n')
     target.write('end process;\n\n')
     if int(selected_ff_type) == 4:
       target.write('AFF_chain_input_MUX: lis_mux\n')
@@ -937,7 +961,7 @@ def main(argv):
     sensitivity_list = sensitivity_list[0:-2] + ')\n'
     target.write(sensitivity_list)    
     target.write('begin\n')
-    for i in range(1, len(l_outputs)-1):
+    for i in range(0, len(l_outputs)-1):
       if l_outputs[i] not in ['BIST_done_out', 'BIST_result_out']:
         target.write('\t%s <= %s;\n' % (l_outputs[i], l_outputs[i] + '_temp'))
     #target.write('\t%s <= %s;\n' % (misr.misr_ffs[-1].CUT_in[0:-5], misr.misr_ffs[-1].CUT_in))

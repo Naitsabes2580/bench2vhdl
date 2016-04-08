@@ -74,7 +74,7 @@ def main(argv):
       # Skip comment lines
       if not line.startswith('#') == True: 
         splitted_line = line.split(';')
- 	if not splitted_line[2] == 'Address':
+ 	if splitted_line[2] == 'Address':
 	  print "%s:%s" % (splitted_line[3], splitted_line[4])
     	  l_patterns.append(splitted_line[3].strip())
     	  l_responses.append(splitted_line[4].strip())
