@@ -48,6 +48,76 @@ class lis_misr3_ff:
 		rts += '\t\t\t);\n'
 		return rts
 
+class lis_misr2_superpos_ff:
+	count = 0
+
+	def __init__(self, name, clk, reset, CUT_in, Q_in, B0_in, B1_in, Hold_in, Rollback_in, Q_out, ERR_out):
+		self.name = name
+		self.clk = clk
+		self.reset = reset
+		self.CUT_in = CUT_in
+		self.Q_in = Q_in
+		self.B0_in = B0_in
+		self.B1_in = B1_in
+		self.Hold_in = Hold_in
+		self.Rollback_in = Rollback_in
+		self.Q_out = Q_out
+		self.ERR_out = ERR_out
+		#self.number = lis_misr2_ff.count
+      	#lis_misr2_ff.count += 1
+
+	def writePortMap(self):
+		rts = '\n%s:\tlis_misr2_superpos_ff \n' % self.name
+		rts += '\t\t\tport map( \n'
+		rts += '\t\t\t\tclk\t\t\t=> %s,\n' % self.clk
+		rts += '\t\t\t\treset\t\t=> %s,\n' % self.reset
+		rts += '\t\t\t\tCUT_in\t\t=> %s,\n' % self.CUT_in
+		rts += '\t\t\t\tQ_in\t\t=> %s,\n' % self.Q_in
+		rts += '\t\t\t\tB0_in\t\t=> %s,\n' % self.B0_in
+		rts += '\t\t\t\tB1_in\t\t=> %s,\n' % self.B1_in
+		rts += '\t\t\t\tHold_in\t\t=> %s,\n' % self.Hold_in
+		rts += '\t\t\t\tRollback_in\t=> %s,\n' % self.Rollback_in
+		rts += '\t\t\t\tQ_out\t\t=> %s,\n' % self.Q_out
+		rts += '\t\t\t\tERR_out\t\t=> %s\n' % self.ERR_out
+		rts += '\t\t\t);\n'
+		return rts
+
+class lis_misr3_superpos_ff:
+	count = 0
+
+	def __init__(self, name, clk, reset, CUT_in, Q_in, B0_in, B1_in, Hold_in, Rollback_in, FB_in, ERR_out, Q_out):
+		self.name = name
+		self.clk = clk
+		self.reset = reset
+		self.CUT_in = CUT_in
+		self.Q_in = Q_in
+		self.B0_in = B0_in
+		self.B1_in = B1_in
+		self.Hold_in = Hold_in
+		self.Rollback_in = Rollback_in
+		self.FB_in = FB_in
+		self.ERR_out = ERR_out
+		self.Q_out = Q_out
+		#self.number = lis_misr2_ff.count
+      	#lis_misr2_ff.count += 1
+
+	def writePortMap(self):
+		rts = '\n%s:\tlis_misr3_superpos_ff \n' % self.name
+		rts += '\t\t\tport map( \n'
+		rts += '\t\t\t\tclk\t\t\t=> %s,\n' % self.clk
+		rts += '\t\t\t\treset\t\t=> %s,\n' % self.reset
+		rts += '\t\t\t\tCUT_in\t\t=> %s,\n' % self.CUT_in
+		rts += '\t\t\t\tQ_in\t\t=> %s,\n' % self.Q_in
+		rts += '\t\t\t\tB0_in\t\t=> %s,\n' % self.B0_in
+		rts += '\t\t\t\tB1_in\t\t=> %s,\n' % self.B1_in
+		rts += '\t\t\t\tHold_in\t\t=> %s,\n' % self.Hold_in
+		rts += '\t\t\t\tRollback_in\t=> %s,\n' % self.Rollback_in
+		rts += '\t\t\t\tFB_in\t\t=> %s,\n' % self.FB_in
+		rts += '\t\t\t\tERR_out\t\t=> %s,\n' % self.ERR_out
+		rts += '\t\t\t\tQ_out\t\t=> %s\n' % self.Q_out
+		rts += '\t\t\t);\n'
+		return rts
+
 class lis_misr:
 
 	prim_poly_coeff = {
@@ -86,7 +156,11 @@ class lis_misr:
 		for i in range(0, len(self.misr_ffs)):
 			if isinstance(self.misr_ffs[i], lis_misr2_ff):
 				rts += lis_misr2_ff.writePortMap(self.misr_ffs[i])
+			elif isinstance(self.misr_ffs[i], lis_misr2_superpos_ff):
+				rts += lis_misr2_superpos_ff.writePortMap(self.misr_ffs[i])
 			elif isinstance(self.misr_ffs[i], lis_misr3_ff):
 				rts += lis_misr3_ff.writePortMap(self.misr_ffs[i])
+			elif isinstance(self.misr_ffs[i], lis_misr3_superpos_ff):
+				rts += lis_misr3_superpos_ff.writePortMap(self.misr_ffs[i])
 		return rts
 

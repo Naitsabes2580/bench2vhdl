@@ -75,3 +75,40 @@ class lis_ser_bist_input_isol_sr:
       rts += '\t\t\t\tchain_out\t\t=> %s \n' % self.chain_out
       rts += '\t\t\t);\n\n' 
       return rts
+
+#This class is for ser_bist input isolation shift registers
+class lis_superpos_iisr:   
+   count = 0
+
+   def __init__(self, clk, reset, PI_in, chain_in, sel_in, Hold_in, Rollback_in, mux_out, chain_out, ERR_out):
+      self.clk = clk
+      self.reset = reset
+      self.PI_in = PI_in
+      self.chain_in = chain_in
+      self.sel_in = sel_in
+      self.Hold_in = Hold_in
+      self.Rollback_in = Rollback_in
+      self.mux_out = mux_out
+      self.chain_out = chain_out
+      self.ERR_out = ERR_out
+      self.number = lis_superpos_iisr.count
+      lis_superpos_iisr.count += 1
+   
+   def displayCount(self):
+     print "Total Input Isolation SR MUXes: %d" % lis_superpos_iisr.number
+
+   def writePortMap(self):
+      rts = 'MUX_%s:\tlis_superpos_iisr \n' % self.PI_in
+      rts += '\t\t\tport map( \n'
+      rts += '\t\t\t\tclk\t\t\t\t=> %s,\n' % self.clk 
+      rts += '\t\t\t\treset\t\t\t=> %s,\n ' % self.reset 
+      rts += '\t\t\t\tPI_in\t\t\t=> %s,\n' % self.PI_in
+      rts += '\t\t\t\tchain_in\t\t=> %s,\n' % self.chain_in 
+      rts += '\t\t\t\tsel_in\t\t\t=> %s,\n' % self.sel_in 
+      rts += '\t\t\t\tHold_in\t\t\t=> %s,\n' % self.Hold_in 
+      rts += '\t\t\t\tRollback_in\t\t=> %s,\n' % self.Rollback_in 
+      rts += '\t\t\t\tmux_out\t\t\t=> %s,\n' % self.mux_out 
+      rts += '\t\t\t\tchain_out\t\t=> %s, \n' % self.chain_out
+      rts += '\t\t\t\tERR_out\t\t\t=> %s\n' % self.ERR_out 
+      rts += '\t\t\t);\n\n' 
+      return rts

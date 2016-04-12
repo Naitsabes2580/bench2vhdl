@@ -80,12 +80,15 @@ def main(argv):
           #print 'line_counter: %i' % line_counter
           splitted_line = line.split(";")
           errors_detected = errors_detected + int(splitted_line[1]) + int(splitted_line[2])
+          #print "counter: %s, content: %s, errors detected: %s" % (str(line_counter), splitted_line, str(errors_detected))
           #print errors_detected
    
-   total_errors = line_counter * 2
+   total_errors = (line_counter + 1) * 2
    fault_coverage = float(errors_detected)/float(total_errors)
    
    #print fault_coverage
+   print 'Input file %s processed.' % inputfile
+   print 'Tested faults: %s, detected faults: %s' % (total_errors, errors_detected)
    print "The fault coverage is: {:.2%}".format(fault_coverage)
 
    f.close
