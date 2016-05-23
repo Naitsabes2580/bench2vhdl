@@ -50,42 +50,47 @@ class lis_ser_bist_ff:
 class lis_ser_bist_controller:
   'Class for the SER/BIST test controller'
   
-  def __init__(self, NUM_FF, BIST_LENGTH, MEM_ADDR_WIDTH, \
+  def __init__(self, NUM_FF, BIST_LENGTH, MEM_ADDR_WIDTH, MEM_ADDR_OFFSET, \
     SESSION_ROM_LOWER, SESSION_ROM_UPPER, LOC_ROM_LOWER, LOC_ROM_UPPER, \
     clk, reset, ERR_in, parity_ok_in, BIST_start_in, Capture_in, pattern_in, \
     response_in, address_out, read_memory, Hold_out, par_hold_out, par_reset_out, \
     Rollback_out, BIST_eval_out, B0_out, B1_out, Capture_out, BIST_done_out, 
-    BIST_pass_out, err_code, Scan_out, AFF_scan_out):
-    self.NUM_FF             = NUM_FF
-    self.BIST_LENGTH        = BIST_LENGTH
-    self.MEM_ADDR_WIDTH     = MEM_ADDR_WIDTH
-    self.SESSION_ROM_LOWER  = SESSION_ROM_LOWER
-    self.SESSION_ROM_UPPER  = SESSION_ROM_UPPER
-    self.LOC_ROM_LOWER      = LOC_ROM_LOWER
-    self.LOC_ROM_UPPER      = LOC_ROM_UPPER
-    self.clk                = clk
-    self.reset              = reset
-    self.ERR_in             = ERR_in
-    self.parity_ok_in       = parity_ok_in
-    self.BIST_start_in      = BIST_start_in
-    self.Capture_in         = Capture_in
-    self.pattern_in         = pattern_in
-    self.response_in        = response_in
-    self.address_out        = address_out
-    self.read_memory        = read_memory    
-    self.Hold_out           = Hold_out
-    self.par_hold_out       = par_hold_out
-    self.par_reset_out      = par_reset_out
-    self.Rollback_out       = Rollback_out
-    self.BIST_eval_out      = BIST_eval_out
-    self.B0_out             = B0_out
-    self.B1_out             = B1_out
-    self.Capture_out        = Capture_out
-    self.BIST_done_out      = BIST_done_out
-    self.BIST_pass_out      = BIST_pass_out
-    self.err_code           = err_code
-    self.Scan_out           = Scan_out
-    self.AFF_scan_out       = AFF_scan_out
+    BIST_pass_out, err_code, input_mux_sel, AFF_chain_input_MUX_sel, HFF_MUX_sel, \
+    Scan_out, AFF_scan_out):
+    self.NUM_FF                   = NUM_FF
+    self.BIST_LENGTH              = BIST_LENGTH
+    self.MEM_ADDR_WIDTH           = MEM_ADDR_WIDTH
+    self.MEM_ADDR_OFFSET          = MEM_ADDR_OFFSET
+    self.SESSION_ROM_LOWER        = SESSION_ROM_LOWER
+    self.SESSION_ROM_UPPER        = SESSION_ROM_UPPER
+    self.LOC_ROM_LOWER            = LOC_ROM_LOWER
+    self.LOC_ROM_UPPER            = LOC_ROM_UPPER
+    self.clk                      = clk
+    self.reset                    = reset
+    self.ERR_in                   = ERR_in
+    self.parity_ok_in             = parity_ok_in
+    self.BIST_start_in            = BIST_start_in
+    self.Capture_in               = Capture_in
+    self.pattern_in               = pattern_in
+    self.response_in              = response_in
+    self.address_out              = address_out
+    self.read_memory              = read_memory    
+    self.Hold_out                 = Hold_out
+    self.par_hold_out             = par_hold_out
+    self.par_reset_out            = par_reset_out
+    self.Rollback_out             = Rollback_out
+    self.BIST_eval_out            = BIST_eval_out
+    self.B0_out                   = B0_out
+    self.B1_out                   = B1_out
+    self.Capture_out              = Capture_out
+    self.BIST_done_out            = BIST_done_out
+    self.BIST_pass_out            = BIST_pass_out
+    self.err_code                 = err_code
+    self.input_mux_sel            = input_mux_sel
+    self.AFF_chain_input_MUX_sel  = AFF_chain_input_MUX_sel
+    self.HFF_MUX_sel              = HFF_MUX_sel
+    self.Scan_out                 = Scan_out
+    self.AFF_scan_out             = AFF_scan_out
   #  lis_cbist_controller.count += 1
 
   
@@ -94,11 +99,12 @@ class lis_ser_bist_controller:
     Write the required signal declarations for the controller in the architecture definition part 
     """
     ctrl_signals = [self.ERR_in, self.parity_ok_in, self.read_memory, self.Hold_out, self.par_hold_out, self.par_reset_out, self.Rollback_out, 
-    self.BIST_eval_out, self.B0_out, self.B1_out, self.Capture_out, self.err_code, self.Scan_out, self.AFF_scan_out, 'HFF_mux_sel']
+    self.BIST_eval_out, self.B0_out, self.B1_out, self.Capture_out, self.Scan_out, self.AFF_scan_out, 'HFF_mux_sel']
     rts = '\n\tsignal ' #%s, %s, %s : std_logic;\n' % (self.ERR_in, self.B0_out, self.B1_out)
     for i in range(0, len(ctrl_signals)-1):
       rts += '%s, ' % ctrl_signals[i]
     rts += '%s : std_logic;\n' % ctrl_signals[-1]
+    rts += '\tsignal %s : std_logic_vector(2 downto 0);\n' % self.err_code
     rts += '\tsignal %s : std_logic_vector(TBA downto 0);\n' % self.address_out
     return rts
 
@@ -108,6 +114,7 @@ class lis_ser_bist_controller:
     rts  += '\t\t\t\tNUM_FF\t\t\t\t=> %s,\n' % self.NUM_FF
     rts  += '\t\t\t\tBIST_LENGTH\t\t\t=> %s,\n' % self.BIST_LENGTH
     rts  += '\t\t\t\tMEM_ADDR_WIDTH\t\t=> %s,\n' % self.MEM_ADDR_WIDTH
+    rts  += '\t\t\t\tMEM_ADDR_OFFSET\t\t=> %s,\n' % self.MEM_ADDR_OFFSET
     rts  += '\t\t\t\tSESSION_ROM_LOWER\t=> %s,\n' % self.SESSION_ROM_LOWER
     rts  += '\t\t\t\tSESSION_ROM_UPPER\t=> %s,\n' % self.SESSION_ROM_UPPER
     rts  += '\t\t\t\tLOC_ROM_LOWER\t\t=> %s,\n' % self.LOC_ROM_LOWER
@@ -135,6 +142,9 @@ class lis_ser_bist_controller:
     rts  += '\t\t\t\tBIST_done_out\t=> %s,\n' % self.BIST_done_out
     rts  += '\t\t\t\tBIST_pass_out\t=> %s,\n' % self.BIST_pass_out
     rts  += '\t\t\t\terr_code\t\t=> %s,\n' % self.err_code
+    rts  += '\t\t\t\tinput_mux_sel\t\t=> %s,\n' % self.input_mux_sel
+    rts  += '\t\t\t\tAFF_chain_input_MUX_sel\t\t=> %s,\n' % self.AFF_chain_input_MUX_sel
+    rts  += '\t\t\t\tHFF_MUX_sel\t\t=> %s,\n' % self.HFF_MUX_sel
     rts  += '\t\t\t\tScan_out\t\t=> %s,\n' % self.Scan_out
     rts  += '\t\t\t\tAFF_Scan_out\t=> %s\n' % self.AFF_scan_out
     rts  += '\t\t\t);\n\n'
