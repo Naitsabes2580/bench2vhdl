@@ -21,8 +21,9 @@ from lis_ser_ff import lis_ser_ff
 from lis_ser_bist_ff import lis_ser_bist_ff, lis_ser_bist_controller
 from lis_po_dff import lis_po_dff
 from lis_cbist_ff import lis_cbist_ff
+from lis_superpos_ff import lis_superpos_ff, lis_superpos_controller
 from lis_cbist_ff import lis_cbist_controller
-from lis_input_isol_sr import lis_input_isol_sr, lis_ser_bist_input_isol_sr
+from lis_input_isol_sr import lis_input_isol_sr, lis_ser_bist_input_isol_sr, lis_superpos_iisr
 from lis_spc_even import lis_spc_even
 from lis_not import lis_not
 from and2 import and2
@@ -38,13 +39,12 @@ from lis_nor2 import lis_nor2
 from lis_nor3 import lis_nor3
 from lis_nor4 import lis_nor4
 
-from lis_misr import lis_misr
-from lis_misr import lis_misr2_ff
-from lis_misr import lis_misr3_ff
+from lis_misr import lis_misr, lis_misr2_ff, lis_misr3_ff, lis_misr2_superpos_ff, lis_misr3_superpos_ff
 from lis_comparator import lis_comparator
 
 from circuit_ser_bist_memory import circuit_ser_bist_memory
 from circuit_cbist_memory import circuit_cbist_memory
+from circuit_superpos_memory import circuit_superpos_memory
 
 def main(argv):
    inputfile = ''
@@ -69,7 +69,7 @@ def main(argv):
       elif opt in ("-o", "--ofile"):
          outputfile = arg      
       elif opt in ("-t", "--fftype"):
-        if int(arg) >= 1 and int(arg) <= 4:
+        if int(arg) >= 1 and int(arg) <= 5:
           selected_ff_type = str(arg)
           ff_type_preselected = True
 
@@ -103,7 +103,8 @@ def main(argv):
       '(2) Soft error resilient flip-flop with shadow cell',
       '(3) Circular BIST flip-flop',
       #'(4) Combined SER/BIST flip-flop (merges option 2 and 3)']
-      '(4) ISERST cell (merges option 2 and 3)']
+      '(4) ISERST cell (merges option 2 and 3)',
+      '(5) Superposition flip-flop (superposition of option 2 and 3)']
 
    # Print some information for the user if verbose made has been activated
    #if verbose == True
@@ -126,7 +127,7 @@ def main(argv):
     for entry in ff_types:
      print entry  
     selected_ff_type = raw_input('Please specify number of the flip-flops to use: ')
-    while not(selected_ff_type.isdigit() and int(selected_ff_type) >= 1 and int(selected_ff_type) <= 4):
+    while not(selected_ff_type.isdigit() and int(selected_ff_type) >= 1 and int(selected_ff_type) <= 5):
      print 'Invalid option selected. Try again!'    
      selected_ff_type = raw_input('Please specify number of the flip-flops to use: ')   
     print 'Option \"%s\" selected\n' % ff_types[int(selected_ff_type)-1]
@@ -145,6 +146,8 @@ def main(argv):
     entityname += '_cbist'
    elif int(selected_ff_type) == 4:
     entityname += '_ser_bist'
+   elif int(selected_ff_type) == 5:
+    entityname += '_superpos'
 
    with open(inputfile) as f:
     for line in f:
@@ -189,6 +192,17 @@ def main(argv):
             Q_in = l_flip_flops[lis_cbist_ff.count-1].Q_out                                
           new_lis_cbist_ff = lis_cbist_ff('clk', D_in, Q_in, 'ctrl_B0_out', 'ctrl_B1_out', Q_out)          
           l_flip_flops.append(new_lis_cbist_ff)
+
+        elif int(selected_ff_type) == 5: #Superposition flip-flop selected
+          if lis_superpos_ff.count == 0:
+            Q_in = '--needs to be inserted manually!'  #this has to be connected to last ff of superpos chain            
+          else:   
+            Q_in = l_flip_flops[lis_superpos_ff.count-1].Q_out
+          ERR_out = 'SUPERPOS_FF_%s_ERR_out' % str(lis_superpos_ff.count)
+          new_lis_superpos_ff = lis_superpos_ff('clk', 'reset', D_in, Q_in, 'ctrl_B0_out', 'ctrl_B1_out', 'ctrl_Hold_out', 'ctrl_Rollback_out', ERR_out, Q_out)          
+          l_flip_flops.append(new_lis_superpos_ff)
+          l_bist_signals.append(ERR_out)
+
 
         elif int(selected_ff_type) == 4:          
           if lis_ser_bist_ff.count == 0:
@@ -339,6 +353,24 @@ def main(argv):
     #l_bist_signals.append('mux_reset')
     l_flip_flops[0].Q_in = l_input_isol_muxes[-1].chain_out   
 
+   if int(selected_ff_type) == 5:
+    for input_sig in l_inputs:      
+      if lis_superpos_iisr.count == 0:
+         chain_in = '--needs to be inserted manually!'  #this has to be connected to last ff of CBIST chain            
+      else:   
+        chain_in = l_input_isol_muxes[lis_superpos_iisr.count-1].chain_out                                
+      chain_out = 'MUX_%s_chain_out' % input_sig
+      mux_out = '%s_muxed' % input_sig
+      ERR_out = 'MUX_%s_ERR_out' % input_sig
+      #new_lis_superpos_iisr = lis_superpos_iisr('clk', 'mux_reset', input_sig, chain_in, 'input_mux_sel', mux_out, chain_out)
+      new_lis_superpos_iisr = lis_superpos_iisr('clk', 'reset', input_sig, chain_in, 'input_mux_sel', 'ctrl_Hold_out', 'ctrl_Rollback_out', mux_out, chain_out, ERR_out)
+      l_input_isol_muxes.append(new_lis_superpos_iisr)        
+      l_bist_signals.append(chain_out)
+      l_bist_signals.append(mux_out)
+      l_bist_signals.append(ERR_out)
+    #l_bist_signals.append('mux_reset')
+    l_flip_flops[0].Q_in = l_input_isol_muxes[-1].chain_out   
+
    if int(selected_ff_type) == 4:
     for input_sig in l_inputs:      
        if lis_ser_bist_input_isol_sr.count == 0:
@@ -368,7 +400,7 @@ def main(argv):
     l_flip_flops[0].Q_in = l_input_isol_muxes[-1].chain_out   
     l_flip_flops[0].Scan_in = l_input_isol_muxes[-1].Scan_out
 
-   if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
+   if int(selected_ff_type) >= 3 and int(selected_ff_type) <= 5:
     for inv in l_inverters:
       if inv.A in l_inputs:
         inv.A += '_muxed'
@@ -508,6 +540,26 @@ def main(argv):
        l_misr_signals.append('PO_DFF_%s_out' % l_outputs.index(i))
        l_misr_signals.append(l_outputs[l_outputs.index(i)] + '_temp')
     l_input_isol_muxes[0].chain_in = misr.misr_ffs[-1].Q_out
+
+   if int(selected_ff_type) == 5:
+    l_misr_signals = ['misr_reset', 'misr_feedback_path', 'PO_DFF_CBIST_out', 'PO_DFF_CBIST_ERR_out']
+    misr = lis_misr(len(l_outputs) + 1)   
+    misr.addFlipFlop(lis_misr2_superpos_ff('PO_DFF_CBIST', 'clk', 'misr_reset', 'misr_feedback_path', l_flip_flops[-1].Q_out, 'ctrl_B0_out', 'ctrl_B1_out', 'ctrl_Hold_out', 'ctrl_Rollback_out','PO_DFF_CBIST_out', 'PO_DFF_CBIST_ERR_out'))
+    for i in l_outputs:
+      if l_outputs.index(i) in misr.coefficients and l_outputs.index(i) != 0:       
+       ERR_out = 'PO_DFF_%s_ERR_out' % l_outputs.index(i)
+       misr.addFlipFlop(lis_misr3_superpos_ff('PO_DFF_%s' % l_outputs.index(i), 'clk', 'misr_reset', l_outputs[l_outputs.index(i)] + '_temp' , misr.misr_ffs[l_outputs.index(i)].Q_out, 'ctrl_B0_out' , 'ctrl_B1_out' , 'ctrl_Hold_out', 'ctrl_Rollback_out', 'misr_feedback_path', ERR_out,'PO_DFF_%s_out' % l_outputs.index(i)))       
+       l_misr_signals.append('PO_DFF_%s_out' % l_outputs.index(i))
+       l_misr_signals.append(ERR_out)
+       l_misr_signals.append(l_outputs[l_outputs.index(i)] + '_temp')
+ 
+      elif l_outputs.index(i) not in misr.coefficients or l_outputs.index(i) == 0:
+       ERR_out = 'PO_DFF_%s_ERR_out' % l_outputs.index(i)
+       misr.addFlipFlop(lis_misr2_superpos_ff('PO_DFF_%s' % l_outputs.index(i), 'clk', 'misr_reset', l_outputs[l_outputs.index(i)] + '_temp', misr.misr_ffs[l_outputs.index(i)].Q_out, 'ctrl_B0_out', 'ctrl_B1_out', 'ctrl_Hold_out', 'ctrl_Rollback_out', 'PO_DFF_%s_out' % l_outputs.index(i), ERR_out))    
+       l_misr_signals.append('PO_DFF_%s_out' % l_outputs.index(i))
+       l_misr_signals.append(ERR_out)
+       l_misr_signals.append(l_outputs[l_outputs.index(i)] + '_temp')
+    l_input_isol_muxes[0].chain_in = misr.misr_ffs[-1].Q_out      
    
    if int(selected_ff_type) == 4:
     for i in range(0, len(l_outputs)):
@@ -538,7 +590,7 @@ def main(argv):
     l_input_isol_muxes[0].chain_in = l_po_dffs[-1].Q_out
 
    # Adaption to modified driving of circuit outputs for CBIST & SER/BIST
-   if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
+   if int(selected_ff_type) >= 3 and int(selected_ff_type) <= 5:
     for inv in l_inverters:
       if inv.A in l_outputs:
         inv.A += '_temp'
@@ -659,7 +711,7 @@ def main(argv):
     
 
    # Processing of comparators placed at MISR outputs
-   if int(selected_ff_type) == 3:
+   if int(selected_ff_type) == 3 or int(selected_ff_type) == 5:
     l_comparators = []
     l_comparator_signals = []
     #for ff in misr.misr_ffs:
@@ -670,6 +722,9 @@ def main(argv):
    # Processing of controller circuits that might be needed
    if int(selected_ff_type) == 3:
     controller_circuit = lis_cbist_controller('NUM_FF', 'BIST_LENGTH', 'TBA', 'TBA', 'TBA', '"TBA"', '"TBA"', '"TBA"', '"TBA"' , 'clk', 'reset', 'COMP_tree_out', 'BIST_start_in', 'mem_pattern_out', 'ctrl_read_address_out', 'ctrl_response_address_out', 'ctrl_read_memory_out', 'input_mux_sel', 'AFF_chain_input_MUX_sel', 'ctrl_B0_out', 'ctrl_B1_out', 'BIST_done_out', 'BIST_result_out', 'ctrl_AFF_scan_out')
+
+   elif int(selected_ff_type) == 5:
+    controller_circuit = lis_superpos_controller('NUM_FF', 'BIST_LENGTH', 'TBA', 'TBA', 'TBA', '"TBA"', '"TBA"', '"TBA"', '"TBA"' , 'clk', 'reset', 'OR_tree_out','COMP_tree_out', 'BIST_start_in', 'mem_pattern_out', 'ctrl_pattern_address_out', 'ctrl_response_address_out', 'ctrl_read_memory_out', 'ctrl_Hold_out', 'ctrl_Rollback_out', 'input_mux_sel', 'AFF_chain_input_MUX_sel', 'ctrl_B0_out', 'ctrl_B1_out', 'BIST_done_out', 'BIST_result_out', 'ctrl_AFF_scan_out')
    
    elif int(selected_ff_type) == 4:
     #controller_circuit = lis_ser_bist_controller('NUM_FF', 'BIST_LENGTH', 'clk', 'reset', 'OR_tree_out', \
@@ -682,7 +737,7 @@ def main(argv):
    if int(selected_ff_type) == 4:
     parity_checker = lis_spc_even('clk', controller_circuit.par_reset_out, controller_circuit.Scan_out, l_po_dffs[-1].Scan_out, controller_circuit.par_hold_out, 'spc_par_ok_out')
 
-   if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
+   if int(selected_ff_type) >= 3 and int(selected_ff_type) <= 5:
     l_inputs.append('BIST_start_in')
     l_outputs.append('BIST_done_out')
     l_outputs.append('BIST_result_out')
@@ -690,6 +745,9 @@ def main(argv):
    #Pattern/Response Memory for fftype 3
    if int(selected_ff_type) == 3:
     memory = circuit_cbist_memory(entityname + '_memory', 'clk', 'memory_serializer_reset', controller_circuit.read_memory, controller_circuit.address_out, controller_circuit.response_address, 'mem_pattern_out', 'mem_response_out')
+
+   if int(selected_ff_type) == 5:
+    memory = circuit_superpos_memory(entityname + '_memory', 'clk', 'memory_serializer_reset', controller_circuit.read_memory, controller_circuit.address_out, controller_circuit.response_address, 'mem_pattern_out', 'mem_response_out')
 
    #Pattern/Response Memory for fftype 4
    if int(selected_ff_type) == 4:
@@ -729,8 +787,17 @@ def main(argv):
    # #target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := ((%s downto 0) => \'0\');\n' % (str(len(l_comparators)-1)), str(len(l_comparators)-1))    
    # target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := (%s downto 0 => \'0\')\n' % ( str(len(l_comparators)-1), str(len(l_comparators)-1) ) )
    # target.write('\t);\n')
-   if int(selected_ff_type) >= 3:    
+   if int(selected_ff_type) == 4:    
     NUM_FF = (len(l_input_isol_muxes)+len(l_flip_flops)+len(l_outputs)-2)
+    target.write('\tgeneric (\n')
+    target.write('\t\tNUM_FF : integer := %d;\n' % NUM_FF)
+    target.write('\t\tBIST_LENGTH : integer := 5000\n')    
+    #target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := (%s downto 0 => \'0\')\n' \
+    #  % (str(NUM_FF-1), str(NUM_FF-1) ) )
+    target.write('\t);\n')
+
+   if int(selected_ff_type) == 3 or int(selected_ff_type) == 5:    
+    NUM_FF = (len(l_input_isol_muxes)+len(l_flip_flops)+len(l_outputs)-1)
     target.write('\tgeneric (\n')
     target.write('\t\tNUM_FF : integer := %d;\n' % NUM_FF)
     target.write('\t\tBIST_LENGTH : integer := 5000\n')    
@@ -794,6 +861,26 @@ def main(argv):
     target.write('\n\tsignal COMP_out : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(len(l_comparators)-1))
     target.write(circuit_cbist_memory.writeComponentDeclaration(memory))
 
+   elif int(selected_ff_type) == 5:
+    target.write('\n\tsignal ')
+    for i in range(0, len(l_bist_signals)-1):
+      target.write('%s, ' % l_bist_signals[i])
+    target.write('%s : std_logic;\n' % l_bist_signals[-1])
+    target.write(lis_superpos_controller.writeSignalDeclaration(controller_circuit))
+
+    target.write('\n\tsignal memory_serializer_reset, mem_pattern_out : std_ulogic := \'0\';\n')
+    target.write('\tsignal mem_response_out : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(misr.length-1))
+    target.write('\tsignal AFF_chain_input, AFF_chain_input_MUX_sel : std_ulogic := \'0\';\n')    
+    target.write('\n\tsignal ')
+    for i in range(0, len(l_misr_signals)-1):
+      target.write('%s, ' % l_misr_signals[i])
+    target.write('%s : std_logic;\n' % l_misr_signals[-1])
+    target.write('\t--synthesis translate_off\n')
+    target.write('\tsignal misr_signature : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(len(misr.misr_ffs)-1))
+    target.write('\t--synthesis translate_on')
+    target.write('\n\tsignal COMP_out : std_logic_vector(%s downto 0) := (others => \'0\');\n\n' % str(len(l_comparators)-1))
+    target.write(circuit_superpos_memory.writeComponentDeclaration(memory))    
+
    elif int(selected_ff_type) == 4:
     target.write('\n\tsignal ')
     for i in range(0, len(l_bist_signals)-1):
@@ -837,6 +924,11 @@ def main(argv):
     target.write(circuit_cbist_memory.writePortMap(memory))
     target.write(lis_cbist_controller.writePortMap(controller_circuit))
 
+   elif int(selected_ff_type) == 5:
+    target.write('\n\tmemory_serializer_reset <= reset OR BIST_start_in;\n\n')
+    target.write(circuit_superpos_memory.writePortMap(memory))
+    target.write(lis_superpos_controller.writePortMap(controller_circuit))    
+
    elif int(selected_ff_type) == 4:
     #target.write()
     # target.write('\ncircuit_sig_proc: process(')
@@ -864,7 +956,7 @@ def main(argv):
     target.write('\t HFF_MUX_sel\t<= %s OR %s ;\n' % (controller_circuit.B1_out, controller_circuit.Capture_out))
 
    # Write input isolation multiplexers (needed for CBIST FF and SER/BIST FF)
-   if int(selected_ff_type) == 3 or int(selected_ff_type) == 4:
+   if int(selected_ff_type) >= 3 and int(selected_ff_type) <= 5:
     target.write('--------------------------------------------------------------------------------\n')
     target.write('--                    START INPUT ISOLATION MUXES                             --\n')
     target.write('--------------------------------------------------------------------------------\n')
@@ -878,7 +970,7 @@ def main(argv):
      # target.write('\tmux_reset <= reset OR ( ctrl_B0_out NOR ctrl_B1_out );\n')
     #target.write('end process;\n\n')
     
-    if int(selected_ff_type) == 3:
+    if int(selected_ff_type) == 3 or int(selected_ff_type) == 5:
       target.write('AFF_chain_input_MUX: lis_mux\n')
       target.write('port map (\n')
       target.write('\tA_in\t=> %s,\n' % misr.misr_ffs[-1].Q_out)
@@ -903,6 +995,9 @@ def main(argv):
         target.write(lis_input_isol_sr.writePortMap(element))
       elif int(selected_ff_type) == 4:
         target.write(lis_ser_bist_input_isol_sr.writePortMap(element))
+      elif int(selected_ff_type) == 5:
+        target.write(lis_superpos_iisr.writePortMap(element))
+
     target.write('--------------------------------------------------------------------------------\n')
     target.write('--                      END INPUT ISOLATION MUXES                             --\n')
     target.write('--------------------------------------------------------------------------------\n')
@@ -925,8 +1020,12 @@ def main(argv):
     #SER/BIST flip-flop selected
     elif int(selected_ff_type) == 4:
       target.write(lis_ser_bist_ff.writePortMap(l_flip_flops[i]))
+
+    #Superposition flip-flop selected
+    elif int(selected_ff_type) == 5:
+      target.write(lis_superpos_ff.writePortMap(l_flip_flops[i]))
       
-   if int(selected_ff_type) == 3:
+   if int(selected_ff_type) == 3 or int(selected_ff_type) == 5:
     #Write MISR
     target.write('------------------------------------------------------------------------\n')
     target.write('--                            START MISR                                \n')
@@ -963,7 +1062,24 @@ def main(argv):
       target.write(lis_comparator.writePortMap(comp))
     target.write("\nCOMP_tree_out <= \'0\' when (COMP_out = (%s downto 0 => '0')) else \'1\';\n" % str(len(l_comparators)-1))
 
-
+   if int(selected_ff_type) == 5:
+    target.write('------------------------------------------------------------------------\n')
+    target.write('--                          START OR-TREE                             --\n')
+    target.write('------------------------------------------------------------------------\n')
+    #Write OR-tree and shadow cell controller
+    #OR_tree_string = 'OR_tree_out <= ' + l_flip_flops[0].ERR_out + ' OR '
+    OR_tree_string = 'OR_tree_out <= ' + l_input_isol_muxes[0].ERR_out + ' OR '
+    for i in range(1, len(l_input_isol_muxes)):
+      OR_tree_string += l_input_isol_muxes[i].ERR_out + ' OR '
+    for i in range(0, len(l_flip_flops)):
+      OR_tree_string += l_flip_flops[i].ERR_out + ' OR '
+    for i in range(0, len(misr.misr_ffs)-1):
+      OR_tree_string += misr.misr_ffs[i].ERR_out + ' OR '
+    OR_tree_string += '%s;\n' % misr.misr_ffs[-1].ERR_out    
+    target.write(OR_tree_string)
+    target.write('------------------------------------------------------------------------\n')
+    target.write('--                           END OR-TREE                              --\n')
+    target.write('------------------------------------------------------------------------\n') 
 
 
 
