@@ -44,6 +44,7 @@ from lis_misr import lis_misr3_ff
 from lis_comparator import lis_comparator
 
 from circuit_ser_bist_memory import circuit_ser_bist_memory
+from circuit_cbist_memory import circuit_cbist_memory
 
 def main(argv):
    inputfile = ''
@@ -101,7 +102,8 @@ def main(argv):
       '(1) Standard positive edge triggered D-type flip-flop', 
       '(2) Soft error resilient flip-flop with shadow cell',
       '(3) Circular BIST flip-flop',
-      '(4) Combined SER/BIST flip-flop (merges option 2 and 3)']
+      #'(4) Combined SER/BIST flip-flop (merges option 2 and 3)']
+      '(4) ISERST cell (merges option 2 and 3)']
 
    # Print some information for the user if verbose made has been activated
    #if verbose == True
@@ -329,11 +331,12 @@ def main(argv):
          chain_in = l_input_isol_muxes[lis_input_isol_sr.count-1].chain_out                                
        chain_out = 'MUX_%s_chain_out' % input_sig
        mux_out = '%s_muxed' % input_sig
-       new_lis_input_isol_sr = lis_input_isol_sr('clk', 'mux_reset', input_sig, chain_in, 'input_mux_sel', mux_out, chain_out)
+       #new_lis_input_isol_sr = lis_input_isol_sr('clk', 'mux_reset', input_sig, chain_in, 'input_mux_sel', mux_out, chain_out)
+       new_lis_input_isol_sr = lis_input_isol_sr('clk', 'reset', input_sig, chain_in, 'input_mux_sel', mux_out, chain_out)
        l_input_isol_muxes.append(new_lis_input_isol_sr)        
        l_bist_signals.append(chain_out)
        l_bist_signals.append(mux_out)
-    l_bist_signals.append('mux_reset')
+    #l_bist_signals.append('mux_reset')
     l_flip_flops[0].Q_in = l_input_isol_muxes[-1].chain_out   
 
    if int(selected_ff_type) == 4:
@@ -491,17 +494,17 @@ def main(argv):
    if int(selected_ff_type) == 3:
     l_misr_signals = ['misr_reset', 'misr_feedback_path', 'PO_DFF_CBIST_out']
     misr = lis_misr(len(l_outputs) + 1)   
-    misr.addFlipFlop(lis_misr2_ff('PO_DFF_CBIST', 'clk', 'misr_reset', 'misr_feedback_path', l_flip_flops[-1].Q_out, 'PO_DFF_CBIST_out'))
+    misr.addFlipFlop(lis_misr2_ff('PO_DFF_CBIST', 'clk', 'misr_reset', 'misr_feedback_path', l_flip_flops[-1].Q_out, 'ctrl_B0_out', 'ctrl_B1_out', 'PO_DFF_CBIST_out'))
     #for i in range(0, len(l_outputs)):
     # l_outputs[i] = l_outputs[i] + '_temp'
     for i in l_outputs:    
      if l_outputs.index(i) in misr.coefficients and l_outputs.index(i) != 0:
        #print 'hier muss ein lis_misr3_ff hin: %d' % i 
-       misr.addFlipFlop(lis_misr3_ff('PO_DFF_%s' % l_outputs.index(i), 'clk', 'misr_reset', l_outputs[l_outputs.index(i)] + '_temp' , misr.misr_ffs[l_outputs.index(i)].Q_out, 'misr_feedback_path', 'PO_DFF_%s_out' % l_outputs.index(i)))            
+       misr.addFlipFlop(lis_misr3_ff('PO_DFF_%s' % l_outputs.index(i), 'clk', 'misr_reset', l_outputs[l_outputs.index(i)] + '_temp' , misr.misr_ffs[l_outputs.index(i)].Q_out, 'ctrl_B0_out' , 'ctrl_B1_out' ,'misr_feedback_path', 'PO_DFF_%s_out' % l_outputs.index(i)))
        l_misr_signals.append('PO_DFF_%s_out' % l_outputs.index(i))
        l_misr_signals.append(l_outputs[l_outputs.index(i)] + '_temp')
      elif l_outputs.index(i) not in misr.coefficients or l_outputs.index(i) == 0:
-       misr.addFlipFlop(lis_misr2_ff('PO_DFF_%s' % l_outputs.index(i), 'clk', 'misr_reset', l_outputs[l_outputs.index(i)] + '_temp', misr.misr_ffs[l_outputs.index(i)].Q_out, 'PO_DFF_%s_out' % l_outputs.index(i)))      
+       misr.addFlipFlop(lis_misr2_ff('PO_DFF_%s' % l_outputs.index(i), 'clk', 'misr_reset', l_outputs[l_outputs.index(i)] + '_temp', misr.misr_ffs[l_outputs.index(i)].Q_out, 'ctrl_B0_out', 'ctrl_B1_out','PO_DFF_%s_out' % l_outputs.index(i)))      
        l_misr_signals.append('PO_DFF_%s_out' % l_outputs.index(i))
        l_misr_signals.append(l_outputs[l_outputs.index(i)] + '_temp')
     l_input_isol_muxes[0].chain_in = misr.misr_ffs[-1].Q_out
@@ -661,12 +664,12 @@ def main(argv):
     l_comparator_signals = []
     #for ff in misr.misr_ffs:
     for i in range(0, len(misr.misr_ffs)):
-      l_comparators.append(lis_comparator(misr.misr_ffs[i].Q_out, 'EXPECTED_RESPONSE(%s)' % str(len(misr.misr_ffs)-i-1), 'COMP_out(%s)' % str(len(misr.misr_ffs)-i-1)))
+      l_comparators.append(lis_comparator(misr.misr_ffs[i].Q_out, 'mem_response_out(%s)' % str(len(misr.misr_ffs)-i-1), 'COMP_out(%s)' % str(len(misr.misr_ffs)-i-1)))
       #print lis_comparator.writePortMap(new_comp)
    
    # Processing of controller circuits that might be needed
    if int(selected_ff_type) == 3:
-    controller_circuit = lis_cbist_controller('BIST_LENGTH', 'clk', 'reset', 'COMP_tree_out', 'BIST_start_in', 'ctrl_B0_out', 'ctrl_B1_out', 'BIST_done_out', 'BIST_result_out' )
+    controller_circuit = lis_cbist_controller('NUM_FF', 'BIST_LENGTH', 'TBA', 'TBA', 'TBA', '"TBA"', '"TBA"', '"TBA"', '"TBA"' , 'clk', 'reset', 'COMP_tree_out', 'BIST_start_in', 'mem_pattern_out', 'ctrl_read_address_out', 'ctrl_response_address_out', 'ctrl_read_memory_out', 'input_mux_sel', 'AFF_chain_input_MUX_sel', 'ctrl_B0_out', 'ctrl_B1_out', 'BIST_done_out', 'BIST_result_out', 'ctrl_AFF_scan_out')
    
    elif int(selected_ff_type) == 4:
     #controller_circuit = lis_ser_bist_controller('NUM_FF', 'BIST_LENGTH', 'clk', 'reset', 'OR_tree_out', \
@@ -683,6 +686,10 @@ def main(argv):
     l_inputs.append('BIST_start_in')
     l_outputs.append('BIST_done_out')
     l_outputs.append('BIST_result_out')
+
+   #Pattern/Response Memory for fftype 3
+   if int(selected_ff_type) == 3:
+    memory = circuit_cbist_memory(entityname + '_memory', 'clk', 'memory_serializer_reset', controller_circuit.read_memory, controller_circuit.address_out, controller_circuit.response_address, 'mem_pattern_out', 'mem_response_out')
 
    #Pattern/Response Memory for fftype 4
    if int(selected_ff_type) == 4:
@@ -702,7 +709,7 @@ def main(argv):
    target.write('--#LIS#\n')
    target.write('--Author: Sebastian Kroesche\n')
    target.write('--Date: %02d.%02d.%d - %02d:%02d:%02d  \n' % (now.day, now.month, now.year, now.hour, now.minute, now.second) )
-   target.write('--Description: Implementation of ISCAS89 %s circuit with\n' % entityname)
+   target.write('--Description: Implementation of ISCAS89 %s circuit with\n' % entityname[0:entityname.index('_')])
    target.write('--             %s \n' % ff_types[int(selected_ff_type)-1])#[4:-1])
    target.write('--             generated with bench2vhdl_complete\n')
    target.write('--Circuit statistics\n')
@@ -716,13 +723,13 @@ def main(argv):
    #Write entity declaration to outputfile 
  
    target.write('entity %s is\n' % entityname)
-   if int(selected_ff_type) == 3:
-    target.write('\tgeneric (\n')
-    target.write('\t\tBIST_LENGTH : integer := 5000;\n')
-    #target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := ((%s downto 0) => \'0\');\n' % (str(len(l_comparators)-1)), str(len(l_comparators)-1))    
-    target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := (%s downto 0 => \'0\')\n' % ( str(len(l_comparators)-1), str(len(l_comparators)-1) ) )
-    target.write('\t);\n')
-   elif int(selected_ff_type) == 4:    
+   #if int(selected_ff_type) == 3:
+   # target.write('\tgeneric (\n')
+   # target.write('\t\tBIST_LENGTH : integer := 5000;\n')
+   # #target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := ((%s downto 0) => \'0\');\n' % (str(len(l_comparators)-1)), str(len(l_comparators)-1))    
+   # target.write('\t\tEXPECTED_RESPONSE : std_logic_vector(%s downto 0) := (%s downto 0 => \'0\')\n' % ( str(len(l_comparators)-1), str(len(l_comparators)-1) ) )
+   # target.write('\t);\n')
+   if int(selected_ff_type) >= 3:    
     NUM_FF = (len(l_input_isol_muxes)+len(l_flip_flops)+len(l_outputs)-2)
     target.write('\tgeneric (\n')
     target.write('\t\tNUM_FF : integer := %d;\n' % NUM_FF)
@@ -771,13 +778,21 @@ def main(argv):
     for i in range(0, len(l_bist_signals)-1):
       target.write('%s, ' % l_bist_signals[i])
     target.write('%s : std_logic;\n' % l_bist_signals[-1])
-    target.write('\n\tsignal COMP_out : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(len(l_comparators)-1))
     target.write(lis_cbist_controller.writeSignalDeclaration(controller_circuit))
+    
+    target.write('\n\tsignal memory_serializer_reset, mem_pattern_out : std_ulogic := \'0\';\n')
+    target.write('\tsignal mem_response_out : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(misr.length-1))
+    target.write('\tsignal AFF_chain_input, AFF_chain_input_MUX_sel : std_ulogic := \'0\';\n')
+    
     target.write('\n\tsignal ')
     for i in range(0, len(l_misr_signals)-1):
       target.write('%s, ' % l_misr_signals[i])
     target.write('%s : std_logic;\n' % l_misr_signals[-1])
+    target.write('\t--synthesis translate_off\n')
     target.write('\tsignal misr_signature : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(len(misr.misr_ffs)-1))
+    target.write('\t--synthesis translate_on')
+    target.write('\n\tsignal COMP_out : std_logic_vector(%s downto 0) := (others => \'0\');\n' % str(len(l_comparators)-1))
+    target.write(circuit_cbist_memory.writeComponentDeclaration(memory))
 
    elif int(selected_ff_type) == 4:
     target.write('\n\tsignal ')
@@ -818,6 +833,8 @@ def main(argv):
     target.write('\t);')
 
    elif int(selected_ff_type) == 3:
+    target.write('\n\tmemory_serializer_reset <= reset OR BIST_start_in;\n\n')
+    target.write(circuit_cbist_memory.writePortMap(memory))
     target.write(lis_cbist_controller.writePortMap(controller_circuit))
 
    elif int(selected_ff_type) == 4:
@@ -860,6 +877,18 @@ def main(argv):
     #if int(selected_ff_type) == 4:
      # target.write('\tmux_reset <= reset OR ( ctrl_B0_out NOR ctrl_B1_out );\n')
     #target.write('end process;\n\n')
+    
+    if int(selected_ff_type) == 3:
+      target.write('AFF_chain_input_MUX: lis_mux\n')
+      target.write('port map (\n')
+      target.write('\tA_in\t=> %s,\n' % misr.misr_ffs[-1].Q_out)
+      #TODO %s
+      target.write('\tB_in\t=> ctrl_AFF_scan_out,\n')
+      target.write('\tsel_in\t=> AFF_chain_input_MUX_sel,\n')
+      target.write('\tC_out\t=> AFF_chain_input\n')
+      target.write(');\n\n')
+      l_input_isol_muxes[0].chain_in = 'AFF_chain_input'
+
     if int(selected_ff_type) == 4:
       target.write('AFF_chain_input_MUX: lis_mux\n')
       target.write('port map (\n')
@@ -905,20 +934,24 @@ def main(argv):
     target.write('--      primitive polynomial and coefficients %s                        \n' % misr.coefficients)
     target.write('------------------------------------------------------------------------\n')
     target.write('misr_reset <= reset or (%s NOR %s);\n' % (controller_circuit.B0_out, controller_circuit.B1_out))
-    target.write('mux_reset <= reset or (%s NOR %s);\n' % (controller_circuit.B0_out, controller_circuit.B1_out))
+    #target.write('mux_reset <= reset or (%s NOR %s);\n' % (controller_circuit.B0_out, controller_circuit.B1_out))
     target.write(lis_misr.writeAllPortMaps(misr))
     target.write('\nmisr_feedback_path <= %s;\n' % misr.misr_ffs[-1].Q_out)
+    target.write('--synthesis translate_off')
     target.write('\nmisr_signature <= ')
     for i in range(0, len(misr.misr_ffs)-1):
       target.write('%s & ' % misr.misr_ffs[i].Q_out)
     target.write('%s;\n' % misr.misr_ffs[-1].Q_out)
+    target.write('--synthesis translate_on')
     target.write('\noutput_temp_proc: process(')
     for i in range(0, len(misr.misr_ffs)-1):
-      target.write('%s, ' % misr.misr_ffs[i].CUT_in)
+      if not misr.misr_ffs[i].CUT_in == 'misr_feedback_path':
+        target.write('%s, ' % misr.misr_ffs[i].CUT_in)
     target.write('%s)\n' % misr.misr_ffs[-1].CUT_in)    
     target.write('begin\n')
     for i in range(0, len(misr.misr_ffs)-1):
-      target.write('\t%s <= %s;\n' % (misr.misr_ffs[i].CUT_in[0:-5], misr.misr_ffs[i].CUT_in))
+      if not misr.misr_ffs[i].CUT_in == 'misr_feedback_path':
+        target.write('\t%s <= %s;\n' % (misr.misr_ffs[i].CUT_in[0:-5], misr.misr_ffs[i].CUT_in))
     target.write('\t%s <= %s;\n' % (misr.misr_ffs[-1].CUT_in[0:-5], misr.misr_ffs[-1].CUT_in))
     target.write('end process;\n')
     target.write('------------------------------------------------------------------------\n')
@@ -929,6 +962,10 @@ def main(argv):
     for comp in l_comparators:
       target.write(lis_comparator.writePortMap(comp))
     target.write("\nCOMP_tree_out <= \'0\' when (COMP_out = (%s downto 0 => '0')) else \'1\';\n" % str(len(l_comparators)-1))
+
+
+
+
 
    elif int(selected_ff_type) == 4:
     target.write('------------------------------------------------------------------------\n')

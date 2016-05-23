@@ -1,9 +1,9 @@
 ------------------------------------------------------------------------
 --#LIS#
 --Author: Sebastian Kroesche
---Date: 23.05.2016 - 11:28:53  
+--Date: 23.05.2016 - 13:10:51  
 --Description: Implementation of ISCAS89 s1494 circuit with
---             (4) ISERST cell (merges option 2 and 3) 
+--             (3) Circular BIST flip-flop 
 --             generated with bench2vhdl_complete
 --Circuit statistics
 --# s1494
@@ -19,7 +19,7 @@ use IEEE.std_logic_1164.all;
 library lis_lib;
 use lis_lib.ser_bist.all; 
  
-entity s1494_ser_bist is
+entity s1494_cbist is
 	generic (
 		NUM_FF : integer := 33;
 		BIST_LENGTH : integer := 5000
@@ -36,9 +36,6 @@ entity s1494_ser_bist is
 		v1: in std_logic; 
 		v0: in std_logic; 
 		BIST_start_in: in std_logic; 
-		Capture_in : in std_logic;
-		Capture_out : out std_logic;
-		err_code : out std_logic_vector(2 downto 0);
 		v13_D_24: out std_logic; 
 		v13_D_23: out std_logic; 
 		v13_D_22: out std_logic; 
@@ -63,27 +60,32 @@ entity s1494_ser_bist is
 	);
 end entity; 
 
-architecture rtl of s1494_ser_bist is
+architecture rtl of s1494_cbist is
 
 	signal v13_D_5C, v12, v13_D_4C, v11, v13_D_3C, v10, v13_D_2C, v9, v13_D_1C, v8, v13_D_0C, v7, v4E, C70D, C70DE, C104D, C104DE, C141D, C141DE, C191D, C191DE, C218D, C218DE, C180D, C180DE, C90D, C90DE, v3E, v1E, C30D, C30DE, C194D, C194DE, C117D, C117DE, C195D, C195DE, C208D, C208DE, C118D, C118DE, C138D, C138DE, C220D, C220DE, C166D, C166DE, C49D, C49DE, v5E, C81D, C81DE, C131D, C131DE, v0E, C144D, C144DE, C157D, C157DE, v11E, v6E, C129D, C129DE, v9E, v2E, v10E, v12E, C165D, C165DE, C83D, C83DE, C108D, C108DE, C124D, C124DE, v8E, v7E, Av13_D_24B, I650, Av13_D_23B, I653, Av13_D_22B, I656, Av13_D_21B, I659, Av13_D_20B, I662, Av13_D_19B, I665, Av13_D_18B, I668, Av13_D_17B, I671, Av13_D_16B, I674, Av13_D_15B, I677, Av13_D_14B, I680, Av13_D_13B, I683, Av13_D_12B, I686, Av13_D_11B, I689, Av13_D_10B, I692, Av13_D_9B, I695, Av13_D_8B, I698, Av13_D_7B, I701, Av13_D_6B, I704, Av13_D_5B, I707, v13_D_5, Av13_D_4B, I710, v13_D_4, Av13_D_3B, I713, v13_D_3, Av13_D_2B, I716, v13_D_2, Av13_D_1B, I719, v13_D_1, Av13_D_0B, I722, v13_D_0, I560, I559, I555, I554, I547, I546, I538, I537, I534, I533, I528, I524, I520, I518, I516, I514, I142, I513, I510, I508, I506, I505, I503, I501, I500, I498, II497, I495, I494, I492, II491, I489, I486, I485, I483, I482, I479, I478, I476, I475, I473, I471, I470, I468, I466, I464, I463, I461, I460, I457, I456, I453, I452, I450, I449, I447, I446, I444, I442, I441, I439, I438, I436, I435, I433, I432, I430, I429, I427, I425, I423, I420, I419, I417, I415, I414, I412, I409, I406, I405, I254, I403, I402, I399, I398, I396, I395, I393, I392, I390, I389, I387, I386, I384, I383, I381, I380, I378, I377, I375, C86D, I374, I372, I371, I369, II368, I366, I365, C56D, I363, C178D, I362, I360, C59D, I359, I357, I356, C50D, I354, I352, I350, I349, I347, I346, I344, I342, C159D, I341, I339, I338, I336, I335, I333, I332, I329, II329, I328, I326, I325, I323, C127D, I321, C33D, I320, I318, I317, I315, C155D, I314, I311, C71D, I310, I308, C111D, I306, I305, I303, C172D, I302, I300, C105D, I299, I297, C209D, I296, I294, C211D, I368, I293, I291, C142D, C213D, I288, C203D, I287, I285, C222D, I284, I282, C36D, I281, C29D, I280, C26D, I278, I276, C27D, I275, I273, C201D, I272, I270, C55D, I269, I267, C214D, I266, C200D, I263, C41D, I262, C42D, I260, C78D, I259, I257, C215D, I256, II254, C39D, I253, I251, I250, C77D, I248, C45D, I247, I245, C185D, I243, I242, C130D, I240, C125D, I239, I237, C221D, I236, C219D, I234, C167D, I233, C168D, I232, I230, C109D, I229, I227, C139D, I226, I224, C163D, I223, C160D, I222, C156D, I220, C51D, I219, I218, C44D, I216, C189D, I215, I213, C57D, I212, I210, C120D, I209, C119D, I208, C122D, I206, C150D, I205, I203, C34D, I202, I200, I199, C63D, I197, C158D, I196, C161D, I194, I192, I191, I189, I188, C175D, I186, I185, I183, C183D, I182, I180, C173D, I179, I177, C137D, I176, C145D, I175, I174, C143D, I173, C146D, I171, C193D, I170, I169, I167, I166, C205D, I164, C133D, I163, I161, I160, C65D, I158, C84D, I157, C82D, I156, C80D, I154, C40D, I153, C52D, I152, I151, I149, C112D, I148, I146, C223D, I145, C216D, II142, C169D, I141, C170D, I140, C210D, I137, C46D, I136, C47D, I134, C151D, I133, C152D, I131, I130, C60D, I129, C72D, I128, C69D, I127, C73D, I126, C58D, I124, C164D, I123, C162D, I548, C199D, I120, C123D, I119, C126D, I117, C35D, I116, C37D, I114, C97D, I113, C93D, I112, I111, C98D, I109, C179D, I108, C181D, I106, C114D, I105, C113D, I104, C107D, I103, C115D, I101, C128D, I100, C134D, I98, C87D, I97, C88D, I96, C85D, I95, C76D, I93, C147D, I92, C140D, I91, C148D, I89, C48D, I88, C43D, I87, C53D, I86, C54D, I84, C224D, I83, C225D, I82, C217D, I80, C192D, I79, I78, C196D, I76, C174D, I75, I73, C31D, I72, C38D, I71, C28D, I69, C202D, I68, C206D, I66, C100D, I65, I64, I63, C99D, I62, C95D, I60, C74D, I59, C67D, I58, C75D, C153D, I55, C187D, I54, C186D, I52, C135D, I51, C132D, I49, C176D, I48, C177D, I46, C110D, I45, C116D, I44, C106D, I43, I41, C96D, I40, C92D, I39, C103D, I38, C102D, I36, C89D, I35, C79D, I34, C91D, I32, C207D, I642, I31, I29, C190D, I28, C188D, I27, C184D, I491, I497, I542, I610 : std_logic;
 
-	signal input_mux_sel, SER_BIST_FF_0_ERR_out, SER_BIST_FF_0_Scan_out, SER_BIST_FF_1_ERR_out, SER_BIST_FF_1_Scan_out, SER_BIST_FF_2_ERR_out, SER_BIST_FF_2_Scan_out, SER_BIST_FF_3_ERR_out, SER_BIST_FF_3_Scan_out, SER_BIST_FF_4_ERR_out, SER_BIST_FF_4_Scan_out, SER_BIST_FF_5_ERR_out, SER_BIST_FF_5_Scan_out, MUX_CLR_chain_out, CLR_muxed, MUX_CLR_ERR_out, MUX_CLR_Scan_out, MUX_v6_chain_out, v6_muxed, MUX_v6_ERR_out, MUX_v6_Scan_out, MUX_v5_chain_out, v5_muxed, MUX_v5_ERR_out, MUX_v5_Scan_out, MUX_v4_chain_out, v4_muxed, MUX_v4_ERR_out, MUX_v4_Scan_out, MUX_v3_chain_out, v3_muxed, MUX_v3_ERR_out, MUX_v3_Scan_out, MUX_v2_chain_out, v2_muxed, MUX_v2_ERR_out, MUX_v2_Scan_out, MUX_v1_chain_out, v1_muxed, MUX_v1_ERR_out, MUX_v1_Scan_out, MUX_v0_chain_out, v0_muxed, MUX_v0_ERR_out, MUX_v0_Scan_out : std_logic;
+	signal input_mux_sel, MUX_CLR_chain_out, CLR_muxed, MUX_v6_chain_out, v6_muxed, MUX_v5_chain_out, v5_muxed, MUX_v4_chain_out, v4_muxed, MUX_v3_chain_out, v3_muxed, MUX_v2_chain_out, v2_muxed, MUX_v1_chain_out, v1_muxed, MUX_v0_chain_out, v0_muxed : std_logic;
 
-	signal v13_D_24_temp, PO_DFF_0_out, PO_DFF_0_ERR_out, PO_DFF_0_Scan_out, v13_D_23_temp, PO_DFF_1_out, PO_DFF_1_ERR_out, PO_DFF_1_Scan_out, v13_D_22_temp, PO_DFF_2_out, PO_DFF_2_ERR_out, PO_DFF_2_Scan_out, v13_D_21_temp, PO_DFF_3_out, PO_DFF_3_ERR_out, PO_DFF_3_Scan_out, v13_D_20_temp, PO_DFF_4_out, PO_DFF_4_ERR_out, PO_DFF_4_Scan_out, v13_D_19_temp, PO_DFF_5_out, PO_DFF_5_ERR_out, PO_DFF_5_Scan_out, v13_D_18_temp, PO_DFF_6_out, PO_DFF_6_ERR_out, PO_DFF_6_Scan_out, v13_D_17_temp, PO_DFF_7_out, PO_DFF_7_ERR_out, PO_DFF_7_Scan_out, v13_D_16_temp, PO_DFF_8_out, PO_DFF_8_ERR_out, PO_DFF_8_Scan_out, v13_D_15_temp, PO_DFF_9_out, PO_DFF_9_ERR_out, PO_DFF_9_Scan_out, v13_D_14_temp, PO_DFF_10_out, PO_DFF_10_ERR_out, PO_DFF_10_Scan_out, v13_D_13_temp, PO_DFF_11_out, PO_DFF_11_ERR_out, PO_DFF_11_Scan_out, v13_D_12_temp, PO_DFF_12_out, PO_DFF_12_ERR_out, PO_DFF_12_Scan_out, v13_D_11_temp, PO_DFF_13_out, PO_DFF_13_ERR_out, PO_DFF_13_Scan_out, v13_D_10_temp, PO_DFF_14_out, PO_DFF_14_ERR_out, PO_DFF_14_Scan_out, v13_D_9_temp, PO_DFF_15_out, PO_DFF_15_ERR_out, PO_DFF_15_Scan_out, v13_D_8_temp, PO_DFF_16_out, PO_DFF_16_ERR_out, PO_DFF_16_Scan_out, v13_D_7_temp, PO_DFF_17_out, PO_DFF_17_ERR_out, PO_DFF_17_Scan_out, v13_D_6_temp, PO_DFF_18_out, PO_DFF_18_ERR_out, PO_DFF_18_Scan_out : std_logic;
-
-	signal OR_tree_out, spc_par_ok_out, ctrl_read_memory_out, ctrl_Hold_out, ctrl_par_hold_out, ctrl_par_reset_out, ctrl_Rollback_out, ctrl_BIST_eval_out, ctrl_B0_out, ctrl_B1_out, ctrl_Capture_out, ctrl_Scan_out, ctrl_AFF_scan_out, HFF_mux_sel : std_logic;
-	signal ctrl_err_code_out : std_logic_vector(2 downto 0);
+	signal COMP_tree_out, ctrl_read_memory_out, ctrl_B0_out, ctrl_B1_out, ctrl_AFF_scan_out : std_logic;
 	signal ctrl_read_address_out : std_logic_vector(TBA downto 0);
+	signal ctrl_response_address_out : std_logic_vector(TBA downto 0);
 
-	signal memory_serializer_reset, mem_pattern_out, mem_response_out : std_ulogic := '0';
+	signal memory_serializer_reset, mem_pattern_out : std_ulogic := '0';
+	signal mem_response_out : std_logic_vector(19 downto 0) := (others => '0');
 	signal AFF_chain_input, AFF_chain_input_MUX_sel : std_ulogic := '0';
 
-	COMPONENT s1494_ser_bist_memory 
+	signal misr_reset, misr_feedback_path, PO_DFF_CBIST_out, PO_DFF_0_out, v13_D_24_temp, PO_DFF_1_out, v13_D_23_temp, PO_DFF_2_out, v13_D_22_temp, PO_DFF_3_out, v13_D_21_temp, PO_DFF_4_out, v13_D_20_temp, PO_DFF_5_out, v13_D_19_temp, PO_DFF_6_out, v13_D_18_temp, PO_DFF_7_out, v13_D_17_temp, PO_DFF_8_out, v13_D_16_temp, PO_DFF_9_out, v13_D_15_temp, PO_DFF_10_out, v13_D_14_temp, PO_DFF_11_out, v13_D_13_temp, PO_DFF_12_out, v13_D_12_temp, PO_DFF_13_out, v13_D_11_temp, PO_DFF_14_out, v13_D_10_temp, PO_DFF_15_out, v13_D_9_temp, PO_DFF_16_out, v13_D_8_temp, PO_DFF_17_out, v13_D_7_temp, PO_DFF_18_out, v13_D_6_temp : std_logic;
+	--synthesis translate_off
+	signal misr_signature : std_logic_vector(19 downto 0) := (others => '0');
+	--synthesis translate_on
+	signal COMP_out : std_logic_vector(19 downto 0) := (others => '0');
+	COMPONENT s1494_cbist_memory 
 		PORT( 
 			clk : IN std_logic; 
  			reset : IN std_logic; 
  			start : IN std_logic; 
- 			read_address : IN std_logic_vector(TBA downto 0); 
+ 			pattern_address : IN std_logic_vector(TBA downto 0); 
+ 			response_address : IN std_logic_vector(TBA downto 0); 
  			pattern_out : OUT std_logic; 
  			response_out : OUT std_logic 
  		);
@@ -93,61 +95,49 @@ begin
 
 	memory_serializer_reset <= reset OR BIST_start_in;
 
-MEM: s1494_ser_bist_memory 
+MEM: s1494_cbist_memory 
 		port map( 
 			clk				=> clk, 
  			reset			=> memory_serializer_reset, 
  			start			=> ctrl_read_memory_out, 
- 			read_address	=> ctrl_read_address_out, 
+ 			pattern_address	=> ctrl_read_address_out, 
+ 			response_address	=> ctrl_response_address_out, 
  			pattern_out		=> mem_pattern_out, 
  			response_out	=> mem_response_out 
  		);
 
 
 
-CTRL:	lis_ser_bist_controller
+CTRL:	lis_cbist_controller
 			generic map( 
-				NUM_FF				=> NUM_FF,
-				BIST_LENGTH			=> BIST_LENGTH,
-				MEM_ADDR_WIDTH		=> TBA!,
-				MEM_ADDR_OFFSET		=> TBA!,
-				SESSION_ROM_LOWER	=> "TBA!",
-				SESSION_ROM_UPPER	=> "TBA!",
-				LOC_ROM_LOWER		=> "TBA!",
-				LOC_ROM_UPPER		=> "TBA!" 
+				NUM_FF	=> NUM_FF, 
+				BIST_LENGTH	=> BIST_LENGTH, 
+				MEM_ADDR_WIDTH	=> TBA, 
+				MEM_ADDR_OFFSET	=> TBA, 
+				RESP_ADDR_WIDTH	=> TBA, 
+				SESSION_ROM_LOWER	=> "TBA", 
+				SESSION_ROM_UPPER	=> "TBA", 
+				RESP_ROM_LOWER	=> "TBA", 
+				RESP_ROM_UPPER	=> "TBA" 
 			)
 			port map( 
 				clk				=> clk,
 				reset			=> reset,
-				ERR_in			=> OR_tree_out,
-				parity_ok_in	=> spc_par_ok_out,
+				COMP_in			=> COMP_tree_out,
 				BIST_start_in	=> BIST_start_in,
-				Capture_in		=> Capture_in,
-				pattern_in		=> mem_pattern_out,
-				response_in		=> mem_response_out,
-				address_out		=> ctrl_read_address_out,
-				read_memory		=> ctrl_read_memory_out,
-				Hold_out		=> ctrl_Hold_out,
-				par_hold_out	=> ctrl_par_hold_out,
-				par_reset_out	=> ctrl_par_reset_out,
-				Rollback_out	=> ctrl_Rollback_out,
-				BIST_eval_out	=> ctrl_BIST_eval_out,
+				pattern_in	=> mem_pattern_out,
+				address_out	=> ctrl_read_address_out,
+				response_address	=> ctrl_response_address_out,
+				read_memory	=> ctrl_read_memory_out,
+				input_mux_sel	=> input_mux_sel,
+				AFF_chain_input_MUX_sel	=> AFF_chain_input_MUX_sel,
 				B0_out			=> ctrl_B0_out,
 				B1_out			=> ctrl_B1_out,
-				Capture_out		=> ctrl_Capture_out,
 				BIST_done_out	=> BIST_done_out,
 				BIST_pass_out	=> BIST_result_out,
-				err_code		=> ctrl_err_code_out,
-				input_mux_sel		=> input_mux_sel,
-				AFF_chain_input_MUX_sel		=> AFF_chain_input_mux_sel,
-				HFF_MUX_sel		=> HFF_MUX_sel,
-				Scan_out		=> ctrl_Scan_out,
-				AFF_Scan_out	=> ctrl_AFF_scan_out
+				AFF_scan_out	=> ctrl_AFF_scan_out
 			);
 
-
-	 err_code		<= ctrl_err_code_out;
-	 HFF_MUX_sel	<= ctrl_B1_out OR ctrl_Capture_out ;
 --------------------------------------------------------------------------------
 --                    START INPUT ISOLATION MUXES                             --
 --------------------------------------------------------------------------------
@@ -159,610 +149,371 @@ port map (
 	C_out	=> AFF_chain_input
 );
 
-MUX_CLR:	lis_ser_bist_input_isol_sr 
-			port map( 
-				clk				=> clk,
-				reset			=> reset,
- 				PI_in			=> CLR,
-				chain_in		=> AFF_chain_input,
-				sel_in			=> input_mux_sel,
-				HFF_MUX_sel		=> HFF_MUX_sel,
-				Scan_in			=> ctrl_Scan_out,
-				Test_Done_in	=> ctrl_BIST_eval_out,
-				Hold_in			=> ctrl_Hold_out,
-				Rollback_in		=> ctrl_Rollback_out,
-				ERR_out			=> MUX_CLR_ERR_out,
-				Scan_out		=> MUX_CLR_Scan_out,
-				mux_out			=> CLR_muxed,
-				chain_out		=> MUX_CLR_chain_out 
-			);
+MUX_CLR:	lis_input_isol_sr 
+		port map( 
+			clk			=> clk, 
+ 			reset		=> reset, 
+ 			PI_in		=> CLR, 
+ 			chain_in	=> AFF_chain_input, 
+ 			sel_in		=> input_mux_sel, 
+ 			mux_out		=> CLR_muxed, 
+ 			chain_out	=> MUX_CLR_chain_out 
+ 		);
 
-MUX_v6:	lis_ser_bist_input_isol_sr 
-			port map( 
-				clk				=> clk,
-				reset			=> reset,
- 				PI_in			=> v6,
-				chain_in		=> MUX_CLR_chain_out,
-				sel_in			=> input_mux_sel,
-				HFF_MUX_sel		=> HFF_MUX_sel,
-				Scan_in			=> MUX_CLR_Scan_out,
-				Test_Done_in	=> ctrl_BIST_eval_out,
-				Hold_in			=> ctrl_Hold_out,
-				Rollback_in		=> ctrl_Rollback_out,
-				ERR_out			=> MUX_v6_ERR_out,
-				Scan_out		=> MUX_v6_Scan_out,
-				mux_out			=> v6_muxed,
-				chain_out		=> MUX_v6_chain_out 
-			);
+MUX_v6:	lis_input_isol_sr 
+		port map( 
+			clk			=> clk, 
+ 			reset		=> reset, 
+ 			PI_in		=> v6, 
+ 			chain_in	=> MUX_CLR_chain_out, 
+ 			sel_in		=> input_mux_sel, 
+ 			mux_out		=> v6_muxed, 
+ 			chain_out	=> MUX_v6_chain_out 
+ 		);
 
-MUX_v5:	lis_ser_bist_input_isol_sr 
-			port map( 
-				clk				=> clk,
-				reset			=> reset,
- 				PI_in			=> v5,
-				chain_in		=> MUX_v6_chain_out,
-				sel_in			=> input_mux_sel,
-				HFF_MUX_sel		=> HFF_MUX_sel,
-				Scan_in			=> MUX_v6_Scan_out,
-				Test_Done_in	=> ctrl_BIST_eval_out,
-				Hold_in			=> ctrl_Hold_out,
-				Rollback_in		=> ctrl_Rollback_out,
-				ERR_out			=> MUX_v5_ERR_out,
-				Scan_out		=> MUX_v5_Scan_out,
-				mux_out			=> v5_muxed,
-				chain_out		=> MUX_v5_chain_out 
-			);
+MUX_v5:	lis_input_isol_sr 
+		port map( 
+			clk			=> clk, 
+ 			reset		=> reset, 
+ 			PI_in		=> v5, 
+ 			chain_in	=> MUX_v6_chain_out, 
+ 			sel_in		=> input_mux_sel, 
+ 			mux_out		=> v5_muxed, 
+ 			chain_out	=> MUX_v5_chain_out 
+ 		);
 
-MUX_v4:	lis_ser_bist_input_isol_sr 
-			port map( 
-				clk				=> clk,
-				reset			=> reset,
- 				PI_in			=> v4,
-				chain_in		=> MUX_v5_chain_out,
-				sel_in			=> input_mux_sel,
-				HFF_MUX_sel		=> HFF_MUX_sel,
-				Scan_in			=> MUX_v5_Scan_out,
-				Test_Done_in	=> ctrl_BIST_eval_out,
-				Hold_in			=> ctrl_Hold_out,
-				Rollback_in		=> ctrl_Rollback_out,
-				ERR_out			=> MUX_v4_ERR_out,
-				Scan_out		=> MUX_v4_Scan_out,
-				mux_out			=> v4_muxed,
-				chain_out		=> MUX_v4_chain_out 
-			);
+MUX_v4:	lis_input_isol_sr 
+		port map( 
+			clk			=> clk, 
+ 			reset		=> reset, 
+ 			PI_in		=> v4, 
+ 			chain_in	=> MUX_v5_chain_out, 
+ 			sel_in		=> input_mux_sel, 
+ 			mux_out		=> v4_muxed, 
+ 			chain_out	=> MUX_v4_chain_out 
+ 		);
 
-MUX_v3:	lis_ser_bist_input_isol_sr 
-			port map( 
-				clk				=> clk,
-				reset			=> reset,
- 				PI_in			=> v3,
-				chain_in		=> MUX_v4_chain_out,
-				sel_in			=> input_mux_sel,
-				HFF_MUX_sel		=> HFF_MUX_sel,
-				Scan_in			=> MUX_v4_Scan_out,
-				Test_Done_in	=> ctrl_BIST_eval_out,
-				Hold_in			=> ctrl_Hold_out,
-				Rollback_in		=> ctrl_Rollback_out,
-				ERR_out			=> MUX_v3_ERR_out,
-				Scan_out		=> MUX_v3_Scan_out,
-				mux_out			=> v3_muxed,
-				chain_out		=> MUX_v3_chain_out 
-			);
+MUX_v3:	lis_input_isol_sr 
+		port map( 
+			clk			=> clk, 
+ 			reset		=> reset, 
+ 			PI_in		=> v3, 
+ 			chain_in	=> MUX_v4_chain_out, 
+ 			sel_in		=> input_mux_sel, 
+ 			mux_out		=> v3_muxed, 
+ 			chain_out	=> MUX_v3_chain_out 
+ 		);
 
-MUX_v2:	lis_ser_bist_input_isol_sr 
-			port map( 
-				clk				=> clk,
-				reset			=> reset,
- 				PI_in			=> v2,
-				chain_in		=> MUX_v3_chain_out,
-				sel_in			=> input_mux_sel,
-				HFF_MUX_sel		=> HFF_MUX_sel,
-				Scan_in			=> MUX_v3_Scan_out,
-				Test_Done_in	=> ctrl_BIST_eval_out,
-				Hold_in			=> ctrl_Hold_out,
-				Rollback_in		=> ctrl_Rollback_out,
-				ERR_out			=> MUX_v2_ERR_out,
-				Scan_out		=> MUX_v2_Scan_out,
-				mux_out			=> v2_muxed,
-				chain_out		=> MUX_v2_chain_out 
-			);
+MUX_v2:	lis_input_isol_sr 
+		port map( 
+			clk			=> clk, 
+ 			reset		=> reset, 
+ 			PI_in		=> v2, 
+ 			chain_in	=> MUX_v3_chain_out, 
+ 			sel_in		=> input_mux_sel, 
+ 			mux_out		=> v2_muxed, 
+ 			chain_out	=> MUX_v2_chain_out 
+ 		);
 
-MUX_v1:	lis_ser_bist_input_isol_sr 
-			port map( 
-				clk				=> clk,
-				reset			=> reset,
- 				PI_in			=> v1,
-				chain_in		=> MUX_v2_chain_out,
-				sel_in			=> input_mux_sel,
-				HFF_MUX_sel		=> HFF_MUX_sel,
-				Scan_in			=> MUX_v2_Scan_out,
-				Test_Done_in	=> ctrl_BIST_eval_out,
-				Hold_in			=> ctrl_Hold_out,
-				Rollback_in		=> ctrl_Rollback_out,
-				ERR_out			=> MUX_v1_ERR_out,
-				Scan_out		=> MUX_v1_Scan_out,
-				mux_out			=> v1_muxed,
-				chain_out		=> MUX_v1_chain_out 
-			);
+MUX_v1:	lis_input_isol_sr 
+		port map( 
+			clk			=> clk, 
+ 			reset		=> reset, 
+ 			PI_in		=> v1, 
+ 			chain_in	=> MUX_v2_chain_out, 
+ 			sel_in		=> input_mux_sel, 
+ 			mux_out		=> v1_muxed, 
+ 			chain_out	=> MUX_v1_chain_out 
+ 		);
 
-MUX_v0:	lis_ser_bist_input_isol_sr 
-			port map( 
-				clk				=> clk,
-				reset			=> reset,
- 				PI_in			=> v0,
-				chain_in		=> MUX_v1_chain_out,
-				sel_in			=> input_mux_sel,
-				HFF_MUX_sel		=> HFF_MUX_sel,
-				Scan_in			=> MUX_v1_Scan_out,
-				Test_Done_in	=> ctrl_BIST_eval_out,
-				Hold_in			=> ctrl_Hold_out,
-				Rollback_in		=> ctrl_Rollback_out,
-				ERR_out			=> MUX_v0_ERR_out,
-				Scan_out		=> MUX_v0_Scan_out,
-				mux_out			=> v0_muxed,
-				chain_out		=> MUX_v0_chain_out 
-			);
+MUX_v0:	lis_input_isol_sr 
+		port map( 
+			clk			=> clk, 
+ 			reset		=> reset, 
+ 			PI_in		=> v0, 
+ 			chain_in	=> MUX_v1_chain_out, 
+ 			sel_in		=> input_mux_sel, 
+ 			mux_out		=> v0_muxed, 
+ 			chain_out	=> MUX_v0_chain_out 
+ 		);
 
 --------------------------------------------------------------------------------
 --                      END INPUT ISOLATION MUXES                             --
 --------------------------------------------------------------------------------
 
 --Flip-flops (total number: 6)
-SER_BIST_FF_0:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_5C, 
- 			Q_in		=> MUX_v0_chain_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> MUX_v0_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> SER_BIST_FF_0_ERR_out, 
- 			Scan_out	=> SER_BIST_FF_0_Scan_out, 
- 			Q_out		=> v12 
- 		);
+CBIST_FF_0:	lis_cbist_ff 
+			port map( 
+				clk		=> clk, 
+ 				D_in	=> v13_D_5C, 
+ 				Q_in	=> MUX_v0_chain_out, 
+ 				B0_in	=> ctrl_B0_out, 
+ 				B1_in	=> ctrl_B1_out, 
+ 				Q_out	=> v12 
+ 			);
 
-SER_BIST_FF_1:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_4C, 
- 			Q_in		=> v12, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> SER_BIST_FF_0_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> SER_BIST_FF_1_ERR_out, 
- 			Scan_out	=> SER_BIST_FF_1_Scan_out, 
- 			Q_out		=> v11 
- 		);
+CBIST_FF_1:	lis_cbist_ff 
+			port map( 
+				clk		=> clk, 
+ 				D_in	=> v13_D_4C, 
+ 				Q_in	=> v12, 
+ 				B0_in	=> ctrl_B0_out, 
+ 				B1_in	=> ctrl_B1_out, 
+ 				Q_out	=> v11 
+ 			);
 
-SER_BIST_FF_2:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_3C, 
- 			Q_in		=> v11, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> SER_BIST_FF_1_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> SER_BIST_FF_2_ERR_out, 
- 			Scan_out	=> SER_BIST_FF_2_Scan_out, 
- 			Q_out		=> v10 
- 		);
+CBIST_FF_2:	lis_cbist_ff 
+			port map( 
+				clk		=> clk, 
+ 				D_in	=> v13_D_3C, 
+ 				Q_in	=> v11, 
+ 				B0_in	=> ctrl_B0_out, 
+ 				B1_in	=> ctrl_B1_out, 
+ 				Q_out	=> v10 
+ 			);
 
-SER_BIST_FF_3:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_2C, 
- 			Q_in		=> v10, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> SER_BIST_FF_2_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> SER_BIST_FF_3_ERR_out, 
- 			Scan_out	=> SER_BIST_FF_3_Scan_out, 
- 			Q_out		=> v9 
- 		);
+CBIST_FF_3:	lis_cbist_ff 
+			port map( 
+				clk		=> clk, 
+ 				D_in	=> v13_D_2C, 
+ 				Q_in	=> v10, 
+ 				B0_in	=> ctrl_B0_out, 
+ 				B1_in	=> ctrl_B1_out, 
+ 				Q_out	=> v9 
+ 			);
 
-SER_BIST_FF_4:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_1C, 
- 			Q_in		=> v9, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> SER_BIST_FF_3_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> SER_BIST_FF_4_ERR_out, 
- 			Scan_out	=> SER_BIST_FF_4_Scan_out, 
- 			Q_out		=> v8 
- 		);
+CBIST_FF_4:	lis_cbist_ff 
+			port map( 
+				clk		=> clk, 
+ 				D_in	=> v13_D_1C, 
+ 				Q_in	=> v9, 
+ 				B0_in	=> ctrl_B0_out, 
+ 				B1_in	=> ctrl_B1_out, 
+ 				Q_out	=> v8 
+ 			);
 
-SER_BIST_FF_5:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_0C, 
- 			Q_in		=> v8, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> SER_BIST_FF_4_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> SER_BIST_FF_5_ERR_out, 
- 			Scan_out	=> SER_BIST_FF_5_Scan_out, 
- 			Q_out		=> v7 
- 		);
+CBIST_FF_5:	lis_cbist_ff 
+			port map( 
+				clk		=> clk, 
+ 				D_in	=> v13_D_0C, 
+ 				Q_in	=> v8, 
+ 				B0_in	=> ctrl_B0_out, 
+ 				B1_in	=> ctrl_B1_out, 
+ 				Q_out	=> v7 
+ 			);
 
 ------------------------------------------------------------------------
---                 START PRIMARY OUTPUT HANDLING                      --
+--                            START MISR                                
+--      of width 20 (19 POs + 1 for connecting with CBIST chain) with   
+--      primitive polynomial and coefficients [20, 3, 0]                        
 ------------------------------------------------------------------------
-PO_DFF_0:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_24_temp, 
- 			Q_in		=> v7, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> SER_BIST_FF_5_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_0_ERR_out, 
- 			Scan_out	=> PO_DFF_0_Scan_out, 
- 			Q_out		=> PO_DFF_0_out 
- 		);
+misr_reset <= reset or (ctrl_B0_out NOR ctrl_B1_out);
 
-PO_DFF_1:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_23_temp, 
- 			Q_in		=> PO_DFF_0_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_0_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_1_ERR_out, 
- 			Scan_out	=> PO_DFF_1_Scan_out, 
- 			Q_out		=> PO_DFF_1_out 
- 		);
+PO_DFF_CBIST:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> misr_feedback_path,
+				Q_in	=> v7,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_CBIST_out
+			);
 
-PO_DFF_2:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_22_temp, 
- 			Q_in		=> PO_DFF_1_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_1_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_2_ERR_out, 
- 			Scan_out	=> PO_DFF_2_Scan_out, 
- 			Q_out		=> PO_DFF_2_out 
- 		);
+PO_DFF_0:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_24_temp,
+				Q_in	=> PO_DFF_CBIST_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_0_out
+			);
 
-PO_DFF_3:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_21_temp, 
- 			Q_in		=> PO_DFF_2_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_2_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_3_ERR_out, 
- 			Scan_out	=> PO_DFF_3_Scan_out, 
- 			Q_out		=> PO_DFF_3_out 
- 		);
+PO_DFF_1:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_23_temp,
+				Q_in	=> PO_DFF_0_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_1_out
+			);
 
-PO_DFF_4:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_20_temp, 
- 			Q_in		=> PO_DFF_3_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_3_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_4_ERR_out, 
- 			Scan_out	=> PO_DFF_4_Scan_out, 
- 			Q_out		=> PO_DFF_4_out 
- 		);
+PO_DFF_2:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_22_temp,
+				Q_in	=> PO_DFF_1_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_2_out
+			);
 
-PO_DFF_5:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_19_temp, 
- 			Q_in		=> PO_DFF_4_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_4_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_5_ERR_out, 
- 			Scan_out	=> PO_DFF_5_Scan_out, 
- 			Q_out		=> PO_DFF_5_out 
- 		);
+PO_DFF_3:	lis_misr3_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_21_temp,
+				Q_in	=> PO_DFF_2_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				FB_in	=> misr_feedback_path,
+				Q_out	=> PO_DFF_3_out
+			);
 
-PO_DFF_6:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_18_temp, 
- 			Q_in		=> PO_DFF_5_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_5_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_6_ERR_out, 
- 			Scan_out	=> PO_DFF_6_Scan_out, 
- 			Q_out		=> PO_DFF_6_out 
- 		);
+PO_DFF_4:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_20_temp,
+				Q_in	=> PO_DFF_3_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_4_out
+			);
 
-PO_DFF_7:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_17_temp, 
- 			Q_in		=> PO_DFF_6_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_6_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_7_ERR_out, 
- 			Scan_out	=> PO_DFF_7_Scan_out, 
- 			Q_out		=> PO_DFF_7_out 
- 		);
+PO_DFF_5:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_19_temp,
+				Q_in	=> PO_DFF_4_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_5_out
+			);
 
-PO_DFF_8:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_16_temp, 
- 			Q_in		=> PO_DFF_7_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_7_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_8_ERR_out, 
- 			Scan_out	=> PO_DFF_8_Scan_out, 
- 			Q_out		=> PO_DFF_8_out 
- 		);
+PO_DFF_6:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_18_temp,
+				Q_in	=> PO_DFF_5_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_6_out
+			);
 
-PO_DFF_9:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_15_temp, 
- 			Q_in		=> PO_DFF_8_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_8_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_9_ERR_out, 
- 			Scan_out	=> PO_DFF_9_Scan_out, 
- 			Q_out		=> PO_DFF_9_out 
- 		);
+PO_DFF_7:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_17_temp,
+				Q_in	=> PO_DFF_6_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_7_out
+			);
 
-PO_DFF_10:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_14_temp, 
- 			Q_in		=> PO_DFF_9_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_9_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_10_ERR_out, 
- 			Scan_out	=> PO_DFF_10_Scan_out, 
- 			Q_out		=> PO_DFF_10_out 
- 		);
+PO_DFF_8:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_16_temp,
+				Q_in	=> PO_DFF_7_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_8_out
+			);
 
-PO_DFF_11:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_13_temp, 
- 			Q_in		=> PO_DFF_10_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_10_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_11_ERR_out, 
- 			Scan_out	=> PO_DFF_11_Scan_out, 
- 			Q_out		=> PO_DFF_11_out 
- 		);
+PO_DFF_9:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_15_temp,
+				Q_in	=> PO_DFF_8_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_9_out
+			);
 
-PO_DFF_12:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_12_temp, 
- 			Q_in		=> PO_DFF_11_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_11_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_12_ERR_out, 
- 			Scan_out	=> PO_DFF_12_Scan_out, 
- 			Q_out		=> PO_DFF_12_out 
- 		);
+PO_DFF_10:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_14_temp,
+				Q_in	=> PO_DFF_9_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_10_out
+			);
 
-PO_DFF_13:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_11_temp, 
- 			Q_in		=> PO_DFF_12_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_12_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_13_ERR_out, 
- 			Scan_out	=> PO_DFF_13_Scan_out, 
- 			Q_out		=> PO_DFF_13_out 
- 		);
+PO_DFF_11:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_13_temp,
+				Q_in	=> PO_DFF_10_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_11_out
+			);
 
-PO_DFF_14:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_10_temp, 
- 			Q_in		=> PO_DFF_13_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_13_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_14_ERR_out, 
- 			Scan_out	=> PO_DFF_14_Scan_out, 
- 			Q_out		=> PO_DFF_14_out 
- 		);
+PO_DFF_12:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_12_temp,
+				Q_in	=> PO_DFF_11_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_12_out
+			);
 
-PO_DFF_15:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_9_temp, 
- 			Q_in		=> PO_DFF_14_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_14_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_15_ERR_out, 
- 			Scan_out	=> PO_DFF_15_Scan_out, 
- 			Q_out		=> PO_DFF_15_out 
- 		);
+PO_DFF_13:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_11_temp,
+				Q_in	=> PO_DFF_12_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_13_out
+			);
 
-PO_DFF_16:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_8_temp, 
- 			Q_in		=> PO_DFF_15_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_15_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_16_ERR_out, 
- 			Scan_out	=> PO_DFF_16_Scan_out, 
- 			Q_out		=> PO_DFF_16_out 
- 		);
+PO_DFF_14:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_10_temp,
+				Q_in	=> PO_DFF_13_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_14_out
+			);
 
-PO_DFF_17:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_7_temp, 
- 			Q_in		=> PO_DFF_16_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_16_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_17_ERR_out, 
- 			Scan_out	=> PO_DFF_17_Scan_out, 
- 			Q_out		=> PO_DFF_17_out 
- 		);
+PO_DFF_15:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_9_temp,
+				Q_in	=> PO_DFF_14_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_15_out
+			);
 
-PO_DFF_18:	lis_ser_bist_ff 
-		port map( 
-			clk			=> clk, 
- 			reset		=> reset, 
- 			D_in		=> v13_D_6_temp, 
- 			Q_in		=> PO_DFF_17_out, 
- 			B0_in		=> ctrl_B0_out, 
- 			B1_in		=> ctrl_B1_out,
-			HFF_MUX_sel => HFF_MUX_sel, 
- 			Scan_in		=> PO_DFF_17_Scan_out, 
- 			Test_Done	=> ctrl_BIST_eval_out, 
- 			Hold_in		=> ctrl_Hold_out, 
- 			Rollback_in	=> ctrl_Rollback_out, 
- 			ERR_out		=> PO_DFF_18_ERR_out, 
- 			Scan_out	=> PO_DFF_18_Scan_out, 
- 			Q_out		=> PO_DFF_18_out 
- 		);
+PO_DFF_16:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_8_temp,
+				Q_in	=> PO_DFF_15_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_16_out
+			);
 
-Capture_out	 <= PO_DFF_18_Scan_out;
+PO_DFF_17:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_7_temp,
+				Q_in	=> PO_DFF_16_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_17_out
+			);
 
+PO_DFF_18:	lis_misr2_ff 
+			port map( 
+				clk	=> clk,
+				CUT_in	=> v13_D_6_temp,
+				Q_in	=> PO_DFF_17_out,
+				B0_in	=> ctrl_B0_out,
+				B1_in	=> ctrl_B1_out,
+				Q_out	=> PO_DFF_18_out
+			);
+
+misr_feedback_path <= PO_DFF_18_out;
+--synthesis translate_off
+misr_signature <= PO_DFF_CBIST_out & PO_DFF_0_out & PO_DFF_1_out & PO_DFF_2_out & PO_DFF_3_out & PO_DFF_4_out & PO_DFF_5_out & PO_DFF_6_out & PO_DFF_7_out & PO_DFF_8_out & PO_DFF_9_out & PO_DFF_10_out & PO_DFF_11_out & PO_DFF_12_out & PO_DFF_13_out & PO_DFF_14_out & PO_DFF_15_out & PO_DFF_16_out & PO_DFF_17_out & PO_DFF_18_out;
+--synthesis translate_on
 output_temp_proc: process(v13_D_24_temp, v13_D_23_temp, v13_D_22_temp, v13_D_21_temp, v13_D_20_temp, v13_D_19_temp, v13_D_18_temp, v13_D_17_temp, v13_D_16_temp, v13_D_15_temp, v13_D_14_temp, v13_D_13_temp, v13_D_12_temp, v13_D_11_temp, v13_D_10_temp, v13_D_9_temp, v13_D_8_temp, v13_D_7_temp, v13_D_6_temp)
 begin
 	v13_D_24 <= v13_D_24_temp;
@@ -786,31 +537,150 @@ begin
 	v13_D_6 <= v13_D_6_temp;
 end process;
 ------------------------------------------------------------------------
---                  END PRIMARY OUTPUT HANDLING                       --
+--                            END MISR                                --
 ------------------------------------------------------------------------
-
-------------------------------------------------------------------------
---            START PARITY CHECKING OF EXPECTED RESPONSE              --
-------------------------------------------------------------------------
-PAR_CHK:	lis_spc_even
+COMP_0:	lis_comparator
 			port map( 
-				clk				=> clk,
-				reset			=> ctrl_par_reset_out,
-				scan_ctrl_in	=> ctrl_Scan_out,
-				scan_hffs_in	=> PO_DFF_18_Scan_out,
-				par_hold		=> ctrl_par_hold_out,
-				par_ok			=> spc_par_ok_out
+				A_in	=> PO_DFF_CBIST_out, 
+				B_in	=> mem_response_out(19), 
+				C_out	=> COMP_out(19) 
 			);
-------------------------------------------------------------------------
---             END PARITY CHECKING OF EXPECTED RESPONSE               --
-------------------------------------------------------------------------
-------------------------------------------------------------------------
---                          START OR-TREE                             --
-------------------------------------------------------------------------
-OR_tree_out <= MUX_CLR_ERR_out OR MUX_v6_ERR_out OR MUX_v5_ERR_out OR MUX_v4_ERR_out OR MUX_v3_ERR_out OR MUX_v2_ERR_out OR MUX_v1_ERR_out OR MUX_v0_ERR_out OR SER_BIST_FF_0_ERR_out OR SER_BIST_FF_1_ERR_out OR SER_BIST_FF_2_ERR_out OR SER_BIST_FF_3_ERR_out OR SER_BIST_FF_4_ERR_out OR SER_BIST_FF_5_ERR_out OR PO_DFF_0_ERR_out OR PO_DFF_1_ERR_out OR PO_DFF_2_ERR_out OR PO_DFF_3_ERR_out OR PO_DFF_4_ERR_out OR PO_DFF_5_ERR_out OR PO_DFF_6_ERR_out OR PO_DFF_7_ERR_out OR PO_DFF_8_ERR_out OR PO_DFF_9_ERR_out OR PO_DFF_10_ERR_out OR PO_DFF_11_ERR_out OR PO_DFF_12_ERR_out OR PO_DFF_13_ERR_out OR PO_DFF_14_ERR_out OR PO_DFF_15_ERR_out OR PO_DFF_16_ERR_out OR PO_DFF_17_ERR_out OR PO_DFF_18_ERR_out;
-------------------------------------------------------------------------
---                           END OR-TREE                              --
-------------------------------------------------------------------------
+
+COMP_1:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_0_out, 
+				B_in	=> mem_response_out(18), 
+				C_out	=> COMP_out(18) 
+			);
+
+COMP_2:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_1_out, 
+				B_in	=> mem_response_out(17), 
+				C_out	=> COMP_out(17) 
+			);
+
+COMP_3:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_2_out, 
+				B_in	=> mem_response_out(16), 
+				C_out	=> COMP_out(16) 
+			);
+
+COMP_4:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_3_out, 
+				B_in	=> mem_response_out(15), 
+				C_out	=> COMP_out(15) 
+			);
+
+COMP_5:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_4_out, 
+				B_in	=> mem_response_out(14), 
+				C_out	=> COMP_out(14) 
+			);
+
+COMP_6:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_5_out, 
+				B_in	=> mem_response_out(13), 
+				C_out	=> COMP_out(13) 
+			);
+
+COMP_7:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_6_out, 
+				B_in	=> mem_response_out(12), 
+				C_out	=> COMP_out(12) 
+			);
+
+COMP_8:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_7_out, 
+				B_in	=> mem_response_out(11), 
+				C_out	=> COMP_out(11) 
+			);
+
+COMP_9:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_8_out, 
+				B_in	=> mem_response_out(10), 
+				C_out	=> COMP_out(10) 
+			);
+
+COMP_10:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_9_out, 
+				B_in	=> mem_response_out(9), 
+				C_out	=> COMP_out(9) 
+			);
+
+COMP_11:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_10_out, 
+				B_in	=> mem_response_out(8), 
+				C_out	=> COMP_out(8) 
+			);
+
+COMP_12:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_11_out, 
+				B_in	=> mem_response_out(7), 
+				C_out	=> COMP_out(7) 
+			);
+
+COMP_13:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_12_out, 
+				B_in	=> mem_response_out(6), 
+				C_out	=> COMP_out(6) 
+			);
+
+COMP_14:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_13_out, 
+				B_in	=> mem_response_out(5), 
+				C_out	=> COMP_out(5) 
+			);
+
+COMP_15:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_14_out, 
+				B_in	=> mem_response_out(4), 
+				C_out	=> COMP_out(4) 
+			);
+
+COMP_16:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_15_out, 
+				B_in	=> mem_response_out(3), 
+				C_out	=> COMP_out(3) 
+			);
+
+COMP_17:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_16_out, 
+				B_in	=> mem_response_out(2), 
+				C_out	=> COMP_out(2) 
+			);
+
+COMP_18:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_17_out, 
+				B_in	=> mem_response_out(1), 
+				C_out	=> COMP_out(1) 
+			);
+
+COMP_19:	lis_comparator
+			port map( 
+				A_in	=> PO_DFF_18_out, 
+				B_in	=> mem_response_out(0), 
+				C_out	=> COMP_out(0) 
+			);
+
+
+COMP_tree_out <= '0' when (COMP_out = (19 downto 0 => '0')) else '1';
 
 --Inverters (total number: 89)
 INV_0:	 lis_not port map( A => v4_muxed, Z => v4E );
